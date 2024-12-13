@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/mobile_navigation"
-    app:startDestination="@+id/nav_home">
+    app:startDestination="@id/nav_signup">
 
     <fragment
         android:id="@+id/nav_home"
@@ -22,4 +22,49 @@
         android:name="com.example.multiway.ui.slideshow.SlideshowFragment"
         android:label="@string/menu_slideshow"
         tools:layout="@layout/fragment_slideshow" />
+
+    <fragment
+        android:id="@+id/nav_history"
+        android:name="com.example.multiway.ui.history.HistoryFragment"
+        android:label="History"
+        tools:layout="@layout/fragment_history" >
+
+    </fragment>
+
+    <fragment
+        android:id="@+id/nav_suggested"
+        android:name="com.example.multiway.ui.suggested.SuggestedFragment"
+        android:label="Suggested"
+        tools:layout="@layout/fragment_suggested" >
+
+    </fragment>
+
+    <fragment
+        android:id="@+id/nav_login"
+        android:name="com.example.multiway.LoginFragment"
+        android:label="Login"
+        tools:layout="@layout/fragment_login" >
+
+        <action
+            android:id="@+id/action_loginFragment_to_signupFragment"
+            app:destination="@id/nav_signup" />
+        <action
+            android:id="@+id/action_loginFragment_to_homeFragment"
+            app:destination="@id/nav_home" />
+
+    </fragment>
+
+
+    <fragment
+        android:id="@+id/nav_signup"
+        android:name="com.example.multiway.SignupFragment"
+        android:label="Signup"
+        tools:layout="@layout/fragment_signup" >
+        <action
+            android:id="@+id/action_signupFragment_to_loginFragment"
+            app:destination="@id/nav_login" />
+
+    </fragment>
+
+
 </navigation>

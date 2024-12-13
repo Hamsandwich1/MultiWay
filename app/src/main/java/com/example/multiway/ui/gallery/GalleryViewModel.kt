@@ -1,3 +1,5 @@
+//Joey Teahan - 20520316
+// Gallery view model class, linked to the Gallery fragment
 package com.example.multiway.ui.gallery
 
 import androidx.lifecycle.LiveData

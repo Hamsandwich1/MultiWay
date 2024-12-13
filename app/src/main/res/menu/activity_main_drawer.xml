@@ -6,15 +6,29 @@
     <group android:checkableBehavior="single">
         <item
             android:id="@+id/nav_home"
-            android:icon="@drawable/ic_menu_camera"
+            android:icon="@android:drawable/ic_menu_mapmode"
             android:title="@string/menu_home" />
         <item
             android:id="@+id/nav_gallery"
             android:icon="@android:drawable/ic_dialog_map"
-            android:title="Maps" />
+            android:title="Explore" />
         <item
             android:id="@+id/nav_slideshow"
             android:icon="@drawable/ic_menu_slideshow"
             android:title="@string/menu_slideshow" />
+        <item
+            android:id="@+id/nav_history"
+            android:icon="@android:drawable/ic_menu_myplaces"
+            android:title="History" />
+        <item
+            android:id="@+id/nav_suggested"
+            android:icon="@android:drawable/ic_menu_week"
+            android:title="Suggested" />
+
+        <item
+            android:id="@+id/nav_travel"
+            android:icon="@android:drawable/ic_menu_compass"
+            android:title="Travel Together" />
+
     </group>
 </menu>

@@ -1,23 +1,26 @@
-package com.example.multiway.ui.gallery
+//Joey Teahan - 20520316
+// Gallery class, used to display the gallery features of the app
+
+package com.example.multiway.ui.gallery //Package that links the project together
+
+import android.os.Bundle // Imports the Bundle class
+import android.view.LayoutInflater // Need to inflate the layout to fit the fragment
+import android.view.View // Has the user interface to function properly
+import android.view.ViewGroup // Where the fragment will be
+import androidx.fragment.app.Fragment // Import the Fragment class
+import com.example.multiway.databinding.FragmentGalleryBinding// Binds the info
+import com.mapbox.maps.Style //Needed to get the Mapbox styling options
+import com.mapbox.maps.MapView // Displays the Mapbox map
 
 
-import android.os.Bundle
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
-import androidx.fragment.app.Fragment
-import com.example.multiway.databinding.FragmentGalleryBinding
-import com.google.android.gms.maps.MapView
-import com.mapbox.maps.Style
 
+class GalleryFragment : Fragment() { //The name of this class, and it extends the fragment class
 
-class GalleryFragment : Fragment() {
+    private var _binding: FragmentGalleryBinding? = null // The binding variable
+    private val binding get() = _binding!! // The getter
+    private lateinit var mapView: MapView //Setting up the mapview as a variable
 
-    private var _binding: FragmentGalleryBinding? = null
-    private val binding get() = _binding!!
-    private lateinit var mapView: MapView
-
-    override fun onCreateView(
+    override fun onCreateView( //Create view to set up inflater, container and savedInstanceState
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -28,14 +31,16 @@ class GalleryFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        mapView = binding.mapView
 
-        // Load the map asynchronously
-        mapView.getMapboxMap().loadStyleUri(Style.MAPBOX_STREETS) {
-            // You can perform additional setup here (e.g., add markers or layers)
+
+
+        mapView = binding.mapView //Setting up the mapview as a variable
+
+        mapView.getMapboxMap().loadStyle(Style.MAPBOX_STREETS) { //
         }
     }
 
+   //Used when
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null

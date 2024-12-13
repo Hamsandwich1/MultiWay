@@ -1,3 +1,6 @@
+//Joey Teahan - 20520316
+// Home class, used to display the user's history
+
 package com.example.multiway.ui.home
 
 import android.os.Bundle
@@ -12,9 +15,6 @@ import com.example.multiway.databinding.FragmentHomeBinding
 class HomeFragment : Fragment() {
 
     private var _binding: FragmentHomeBinding? = null
-
-    // This property is only valid between onCreateView and
-    // onDestroyView.
     private val binding get() = _binding!!
 
     override fun onCreateView(
