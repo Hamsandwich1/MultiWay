@@ -43,7 +43,6 @@ class LoginFragment : Fragment() {
 
             // Check if the entered username and password match the stored ones
             if (username == infoViewModel.username && password == infoViewModel.password) {
-                // Navigate to the HomeFragment
                 findNavController().navigate(R.id.action_loginFragment_to_homeFragment)
             } else {
                 Toast.makeText(requireContext(), "Invalid credentials", Toast.LENGTH_SHORT).show()

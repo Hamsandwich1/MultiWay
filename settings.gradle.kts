@@ -1,29 +1,28 @@
 pluginManagement {
     repositories {
-        google {
-            content {
-                includeGroupByRegex("com\\.android.*")
-                includeGroupByRegex("com\\.google.*")
-                includeGroupByRegex("androidx.*")
-            }
-        }
+        google()
         mavenCentral()
         gradlePluginPortal()
     }
 }
+
 dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
-        maven {
-            url = uri("https://api.mapbox.com/downloads/v2/releases/maven")
+        maven { url = uri("https://api.mapbox.com/downloads/v2/releases/maven")
+            authentication {
+                create<BasicAuthentication>("basic")
+            }
+
+
             credentials {
                 username = "mapbox"
-                password = "pk.eyJ1Ijoiam10MTIzNCIsImEiOiJjbTNxNHpzZTIwazF2MmpzYXl1cHNmb3N0In0.n_Fmbo5tWeqAV70hEoWqJA"
+                password = providers.gradleProperty("MAPBOX_DOWNLOADS_TOKEN").orNull ?: ""
             }
         }
     }
-
-    rootProject.name = "MultiWay"
-    include(":app")
 }
+
+rootProject.name = "MultiWay"
+include(":app")

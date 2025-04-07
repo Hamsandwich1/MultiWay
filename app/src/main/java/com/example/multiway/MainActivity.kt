@@ -4,7 +4,7 @@
 package com.example.multiway
 import android.os.Bundle
 import android.view.Menu
-import com.google.firebase.FirebaseApp;
+import com.google.firebase.FirebaseApp
 import androidx.navigation.findNavController
 import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.navigateUp
@@ -40,7 +40,7 @@ class MainActivity : AppCompatActivity() {
 
     appBarConfiguration = AppBarConfiguration(
         setOf(
-            R.id.nav_home, R.id.nav_gallery, R.id.nav_slideshow, R.id.nav_history, R.id.nav_suggested
+            R.id.nav_home, R.id.nav_gallery, R.id.nav_history, R.id.nav_suggested, R.id.nav_companion
     ),drawerLayout
     )
     setupActionBarWithNavController(navController, appBarConfiguration)

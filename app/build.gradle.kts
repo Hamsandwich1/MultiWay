@@ -57,9 +57,18 @@ dependencies {
     implementation(libs.firebase.database)
     implementation(libs.androidx.legacy.support.v4)
     implementation(libs.androidx.fragment.ktx)
+    implementation(libs.mapbox.search)
+    implementation(libs.mapbox.search.ui)
+    implementation(libs.mapbox.autocomplete)
+    implementation(libs.mapbox.directions)
+
+
     testImplementation(libs.junit)
+    implementation(libs.google.play.services.location)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+
+
 
 
 }

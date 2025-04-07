@@ -17,11 +17,6 @@
         android:label="@string/menu_gallery"
         tools:layout="@layout/fragment_gallery" />
 
-    <fragment
-        android:id="@+id/nav_slideshow"
-        android:name="com.example.multiway.ui.slideshow.SlideshowFragment"
-        android:label="@string/menu_slideshow"
-        tools:layout="@layout/fragment_slideshow" />
 
     <fragment
         android:id="@+id/nav_history"
@@ -31,6 +26,7 @@
 
     </fragment>
 
+
     <fragment
         android:id="@+id/nav_suggested"
         android:name="com.example.multiway.ui.suggested.SuggestedFragment"
@@ -38,6 +34,17 @@
         tools:layout="@layout/fragment_suggested" >
 
     </fragment>
+
+    <fragment
+        android:id="@+id/nav_companion"
+        android:name="com.example.multiway.ui.companion.CompanionFragment"
+        android:label="Companion"
+        tools:layout="@layout/fragment_companion" >
+
+    </fragment>
+
+
+
 
     <fragment
         android:id="@+id/nav_login"

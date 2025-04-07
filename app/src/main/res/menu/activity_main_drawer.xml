@@ -12,10 +12,7 @@
             android:id="@+id/nav_gallery"
             android:icon="@android:drawable/ic_dialog_map"
             android:title="Explore" />
-        <item
-            android:id="@+id/nav_slideshow"
-            android:icon="@drawable/ic_menu_slideshow"
-            android:title="@string/menu_slideshow" />
+
         <item
             android:id="@+id/nav_history"
             android:icon="@android:drawable/ic_menu_myplaces"
@@ -26,9 +23,9 @@
             android:title="Suggested" />
 
         <item
-            android:id="@+id/nav_travel"
+            android:id="@+id/nav_companion"
             android:icon="@android:drawable/ic_menu_compass"
-            android:title="Travel Together" />
+            android:title="Account" />
 
     </group>
 </menu>

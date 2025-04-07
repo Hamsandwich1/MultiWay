@@ -36,6 +36,19 @@
 
         />
 
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnFeature1"
+        android:layout_width="303dp"
+        android:layout_height="113dp"
+        android:layout_marginTop="64dp"
+        android:text="Place 1"
+        app:iconGravity="textStart"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.494"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/welcomeText" />
+
     <Button
         android:id="@+id/button3"
         android:layout_width="90dp"
@@ -49,18 +62,6 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.584" />
-
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btnFeature1"
-        android:layout_width="303dp"
-        android:layout_height="113dp"
-        android:layout_marginTop="64dp"
-        android:text="Place 1"
-        app:iconGravity="textStart"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.494"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/welcomeText" />
 
     <Button
         android:id="@+id/button5"
