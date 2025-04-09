@@ -20,7 +20,7 @@
         <item
             android:id="@+id/nav_suggested"
             android:icon="@android:drawable/ic_menu_week"
-            android:title="Suggested" />
+            android:title="Near You " />
 
         <item
             android:id="@+id/nav_companion"

@@ -34,7 +34,6 @@ import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.FusedLocationProviderClient
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.os.Handler
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.mapbox.maps.plugin.annotation.annotations
@@ -71,11 +70,13 @@ import com.google.android.gms.location.Priority
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetBehavior.from
 import com.mapbox.maps.EdgeInsets
-import com.mapbox.maps.ScreenCoordinate
 import com.mapbox.maps.plugin.animation.MapAnimationOptions.Companion.mapAnimationOptions
 import com.mapbox.maps.plugin.animation.easeTo
 import com.mapbox.maps.toCameraOptions
 import kotlinx.coroutines.withContext
+import java.util.Locale
+import com.example.multiway.ui.gallery.SimilarPlacesAdapter
+
 
 
 class GalleryFragment : Fragment() {
@@ -105,6 +106,22 @@ class GalleryFragment : Fragment() {
     private var lastSelectedDestination: Point? = null
     private lateinit var userAnnotationManager: PointAnnotationManager
     private lateinit var searchAnnotationManager: PointAnnotationManager
+    private lateinit var selectedPlaceAnnotationManager: PointAnnotationManager
+    private lateinit var searchResultAnnotationManager: PointAnnotationManager
+    private var activeSearchListener: PlaceAutocompleteUiAdapter.SearchListener? = null
+    private lateinit var similarPlacesRecycler: RecyclerView
+    private lateinit var similarPlaceAdapter: SimilarPlacesAdapter
+
+
+    data class SimilarPlaceItem(
+        val name: String,
+        val distanceKm: Double
+    )
+
+    data class SimilarPlace(
+        val name: String,
+        val distanceKm: Double
+    )
 
 
     override fun onCreateView(
@@ -134,8 +151,21 @@ class GalleryFragment : Fragment() {
         stepsScrollView = binding.stepsScrollView
 
 
+        similarPlaceAdapter = SimilarPlacesAdapter(emptyList()) // ✅ Safe init
+        similarPlacesRecycler = binding.similarPlacesRecycler
+        similarPlacesRecycler.layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
+        similarPlacesRecycler.adapter = similarPlaceAdapter
+
+
+        binding.similarPlacesRecycler.visibility = View.VISIBLE
+        binding.similarPlacesRecycler.adapter = similarPlaceAdapter
+        binding.similarPlacesRecycler.layoutManager = LinearLayoutManager(requireContext())
+
+        binding.similarPlacesRecycler.layoutManager =
+            LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
+
+
         binding.placeInfoContainer.visibility = View.VISIBLE
-        binding.navigationInfoContainer.visibility = View.VISIBLE
         binding.navigationStepsLabel.visibility = View.GONE
         binding.stepsScrollView.visibility = View.GONE
 
@@ -158,6 +188,16 @@ class GalleryFragment : Fragment() {
         }
 
 
+
+        binding.navigationInfoContainer.visibility = View.VISIBLE
+
+        annotationManager = mapView.annotations.createPointAnnotationManager()
+        searchResultAnnotationManager = mapView.annotations.createPointAnnotationManager()
+        selectedPlaceAnnotationManager = mapView.annotations.createPointAnnotationManager()
+
+
+
+
         val bottomSheet = view.findViewById<View>(R.id.placeInfoBottomSheet)
         val bottomSheetBehavior = from(bottomSheet)
 
@@ -168,6 +208,9 @@ class GalleryFragment : Fragment() {
         }
 
 
+
+        val annotationPlugin = mapView.annotations
+        selectedPlaceAnnotationManager = annotationPlugin.createPointAnnotationManager()
 
 
         placeAutocomplete = PlaceAutocomplete.create(
@@ -202,6 +245,21 @@ class GalleryFragment : Fragment() {
                 toggleDirectionsButton.text =
                     if (isVisible) "Show Directions" else "Hide Directions"
             }
+
+            val categoriesWithIcons = mapOf(
+                "restaurant" to R.drawable.food,
+                "pub" to R.drawable.pub,
+                "park" to R.drawable.park,
+                "tourist_attraction" to R.drawable.tour,
+                "hotel" to R.drawable.hotel,
+                "shop" to R.drawable.shop,
+            )
+
+            categoriesWithIcons.forEach { (key, resId) ->
+                val bitmap = BitmapFactory.decodeResource(resources, resId)
+                style.addImage(key, bitmap)
+            }
+
 
 
             // ✅ Enable User Location & Zoom to User
@@ -336,30 +394,42 @@ class GalleryFragment : Fragment() {
             PlaceAutocompleteUiAdapter.SearchListener {
 
             override fun onSuggestionsShown(suggestions: List<PlaceAutocompleteSuggestion>) {
+                // If userLocation isn't available yet, fetch it and re-trigger search
                 if (userLocation == null) {
-                    Log.w("Search", "User location not available yet.")
+                    zoomToUserLocation {
+                        lifecycleScope.launch {
+                            placeAutocompleteUiAdapter.search(queryEditText.text.toString())
+                        }
+                    }
                     return
                 }
 
+                // Filter out suggestions without coordinates or names
                 val validSuggestions = suggestions.filter {
                     it.coordinate != null && it.name.isNotBlank()
                 }
 
-                val sorted = validSuggestions.sortedBy { suggestion ->
-                    val coord = suggestion.coordinate!!
-                    calculateDistance(userLocation!!, coord)
+                // Sort suggestions by distance to user
+                val sortedSuggestions = validSuggestions.sortedBy { suggestion ->
+                    calculateDistance(userLocation!!, suggestion.coordinate!!)
                 }
 
-                val displayList = sorted.map { suggestion ->
+
+
+
+                // Map to your custom display list
+                val displayList = sortedSuggestions.map { suggestion ->
                     SearchResultItem(
                         name = suggestion.name,
                         distanceKm = calculateDistance(userLocation!!, suggestion.coordinate!!)
                     )
                 }
 
+                // Update UI
                 searchResultsAdapter.update(displayList)
                 binding.customResultsList.isVisible = displayList.isNotEmpty()
             }
+
 
             override fun onSuggestionSelected(suggestion: PlaceAutocompleteSuggestion) {
                 CoroutineScope(Dispatchers.Main).launch {
@@ -487,27 +557,42 @@ class GalleryFragment : Fragment() {
 
         val finalQuery = filters.joinToString(" AND ")
 
-        placeAutocompleteUiAdapter.addSearchListener(object :
-            PlaceAutocompleteUiAdapter.SearchListener {
+        // Detach previous listener
+        activeSearchListener?.let { placeAutocompleteUiAdapter.removeSearchListener(it) }
+
+        val newListener = object : PlaceAutocompleteUiAdapter.SearchListener {
             override fun onSuggestionsShown(suggestions: List<PlaceAutocompleteSuggestion>) {
-                if (userLocation == null) {
-                    Log.w("Suggestions", "User location not available yet.")
-                    return
-                }
+                if (userLocation == null) return
 
                 val sorted = suggestions
                     .filter { it.coordinate != null }
-                    .sortedBy { suggestion ->
-                        calculateDistance(userLocation!!, suggestion.coordinate!!)
-                    }
+                    .sortedBy { suggestion -> calculateDistance(userLocation!!, suggestion.coordinate!!) }
 
-                val displayList = sorted.map { suggestion ->
-                    SearchResultItem(
-                        name = suggestion.name,
-                        distanceKm = calculateDistance(userLocation!!, suggestion.coordinate!!)
-                    )
+                // 🔥 Remove all previous search results
+                searchResultAnnotationManager.deleteAll()
+                selectedPlaceAnnotationManager.deleteAll()
+
+                sorted.forEach { suggestion ->
+                    val coord = suggestion.coordinate!!
+                    val categoryIcon = detectCategory(suggestion)
+                    val marker = PointAnnotationOptions()
+                        .withPoint(coord)
+                        .withTextField(suggestion.name)
+                        .withIconImage(categoryIcon)
+                        .withIconSize(0.5)
+                        .withTextOffset(listOf(0.0, 1.5))
+
+                    // 🔥 Add a new search result marker
+                    searchResultAnnotationManager.create(marker)
                 }
 
+                // Optional: update UI
+                val displayList = sorted.map {
+                    SearchResultItem(
+                        name = it.name,
+                        distanceKm = calculateDistance(userLocation!!, it.coordinate!!)
+                    )
+                }
                 searchResultsAdapter.update(displayList)
                 binding.customResultsList.isVisible = displayList.isNotEmpty()
             }
@@ -522,15 +607,17 @@ class GalleryFragment : Fragment() {
             }
 
             override fun onError(e: Exception) {
-                Log.e("SearchError", "Search failed: ${e.message}")
-                Toast.makeText(requireContext(), "Search error: ${e.message}", Toast.LENGTH_SHORT)
-                    .show()
+                Toast.makeText(requireContext(), "Search error: ${e.message}", Toast.LENGTH_SHORT).show()
             }
-        })
+        }
+
+        placeAutocompleteUiAdapter.addSearchListener(newListener)
+        activeSearchListener = newListener
+
+        // ✅ Actually trigger the search
         CoroutineScope(Dispatchers.Main).launch {
             placeAutocompleteUiAdapter.search(finalQuery)
         }
-
     }
 
 
@@ -701,59 +788,174 @@ class GalleryFragment : Fragment() {
         binding.btnClearResults.visibility = View.GONE
     }
 
-
     private fun handleSearchSelection(suggestion: PlaceAutocompleteSuggestion) {
-        lifecycleScope.launch(Dispatchers.IO) {
-            val result = placeAutocomplete.select(suggestion)
+        lifecycleScope.launch(Dispatchers.Main) {
+            val result = withContext(Dispatchers.IO) {
+                placeAutocomplete.select(suggestion)
+            }
 
-            withContext(Dispatchers.Main) {
-                result.onValue { searchResult ->
-                    val location = searchResult.coordinate
-                    val placeName = searchResult.name
+            result.onValue { searchResult ->
+                val location = searchResult.coordinate
+                val placeName = searchResult.name
+                val category = detectCategory(suggestion)
 
-                    moveCameraToLocation(location)
-                    showPlaceInfo(suggestion)
-                    fetchRouteDetailsAndStartUpdates(location)
-                    addSearchMarker(location, placeName)
+                moveCameraToLocation(location)
+                showPlaceInfo(suggestion)
+                fetchRouteDetailsAndStartUpdates(location)
 
-                    binding.btnCloseInfo.setOnClickListener {
-                        binding.placeInfoContainer.visibility = View.GONE
+                // Marker for selected place
+                addSearchMarker(location, placeName, category)
+
+
+                lifecycleScope.launch {
+                    val similarSuggestions = suggestionsNearby(location, "restaurant")
+                    // continue with UI updates...
+
+                    if (similarSuggestions.isNotEmpty()) {
+                        val convertedSuggestions = similarSuggestions.map {
+                            SimilarPlace(it.name, it.distanceKm)
+                        }
+
+                        if (similarSuggestions.isNotEmpty()) {
+                            similarPlaceAdapter = SimilarPlacesAdapter(convertedSuggestions)
+                            binding.similarPlacesRecycler.adapter = similarPlaceAdapter
+                            binding.similarPlacesRecycler.visibility = View.VISIBLE
+                        } else {
+                            binding.similarPlacesRecycler.visibility = View.GONE
+                        }
+
+
+
+
+                        Log.d("SimilarPlaces", "Found ${similarSuggestions.size} similar places")
+
+
+                        binding.btnCloseInfo.setOnClickListener {
+                            binding.placeInfoContainer.visibility = View.GONE
+                        }
+
+                        lastSelectedDestination = location
+                        binding.searchResultsView.visibility = View.GONE
+
                     }
-
-                    lastSelectedDestination = location
-                    fetchRouteDetailsAndStartUpdates(location)
-
-
-                    binding.searchResultsView.visibility = View.GONE
-                }.onError {
-                    Toast.makeText(
-                        requireContext(),
-                        "Selection failed: ${it.message}",
-                        Toast.LENGTH_SHORT
-                    ).show()
                 }
             }
         }
     }
 
+    private suspend fun suggestionsNearby(center: Point, category: String): List<SimilarPlaceItem> {
+        return withContext(Dispatchers.IO) {
+            val queryToUse = if (category.isBlank() || category == "default") {
+                "restaurant" // fallback
+            } else {
+                category
+            }
 
-    private fun addSearchMarker(location: Point, title: String?) {
-        // ✅ Clear previous markers before adding a new one
-        annotationManager.deleteAll()
+            Log.d("SimilarPlaces", "Using query: $queryToUse near ${center.latitude()}, ${center.longitude()}")
+
+            try {
+                val result = placeAutocomplete.suggestions(
+                    query = queryToUse,
+                    proximity = center
+                )
+
+                val suggestions = result.value ?: emptyList()
+
+                Log.d("SimilarPlaces", "Suggestions returned: ${suggestions.size}")
+
+                suggestions
+                    .filter { it.coordinate != null && it.name.isNotBlank() }
+                    .take(5)
+                    .map {
+                        Log.d("SimilarPlaces", "→ ${it.name} at ${it.coordinate}")
+                        SimilarPlaceItem(
+                            name = it.name,
+                            distanceKm = calculateDistance(center, it.coordinate!!)
+                        )
+                    }
+
+            } catch (e: Exception) {
+                Log.e("SimilarPlaces", "Error fetching suggestions: ${e.localizedMessage}")
+                emptyList()
+            }
+        }
+    }
+
+
+
+
+    class SimilarPlacesAdapter(
+        private var places: List<SimilarPlace>
+    ) : RecyclerView.Adapter<SimilarPlacesAdapter.ViewHolder>() {
+
+        inner class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+            val placeName: TextView = view.findViewById(R.id.similarPlaceName)
+            val distance: TextView = view.findViewById(R.id.similarPlaceDistance)
+        }
+
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+            val view = LayoutInflater.from(parent.context)
+                .inflate(R.layout.item_similar_place, parent, false)
+            return ViewHolder(view)
+        }
+
+        override fun getItemCount(): Int = places.size
+
+        override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+            val place = places[position]
+            holder.placeName.text = place.name
+            holder.distance.text = "${"%.1f".format(place.distanceKm)} km"
+        }
+
+
+    }
+
+
+
+
+    private fun detectCategory(suggestion: PlaceAutocompleteSuggestion): String {
+        val name = suggestion.name.lowercase(Locale.ROOT)
+        return when {
+            name.contains("restaurant") -> "restaurant"
+            name.contains("pub") || name.contains("bar") -> "pub"
+            name.contains("park") -> "park"
+            name.contains("hotel") -> "hotel"
+            name.contains("shop") || name.contains("store") -> "shop"
+            name.contains("museum") || name.contains("landmark") || name.contains("monument") -> "tourist_attraction"
+            else -> "default"
+        }
+    }
+
+    private fun addSearchMarker(location: Point, title: String?, category: String?) {
+        selectedPlaceAnnotationManager.deleteAll() // ✅ clear first
+        searchResultAnnotationManager.deleteAll() // 🔥 remove other search results too
+
+        val iconKey = when (category?.trim()?.lowercase(Locale.ROOT)) {
+            "restaurant" -> "restaurant"
+            "pub" -> "pub"
+            "park" -> "park"
+            "tourist_attraction", "landmark", "monument" -> "tourist_attraction"
+            "hotel" -> "hotel"
+            "shop", "shopping" -> "shop"
+            else -> "default"
+        }
 
         val markerOptions = PointAnnotationOptions()
             .withPoint(location)
             .withTextField(title ?: "Location")
-            .withIconImage("custom-marker") // 🔥 Use the custom marker
-            .withIconSize(1.0) // ✅ Adjust marker size (1.0 = full size, 0.5 = half size)
+            .withIconImage(iconKey)
+            .withIconSize(0.4)
+            .withTextOffset(listOf(0.0, 2.0))
+            .withTextColor("#000000")
+            .withTextHaloColor("#FFFFFF")
+            .withTextHaloWidth(2.0)
 
-        annotationManager.create(markerOptions)
+        selectedPlaceAnnotationManager.create(markerOptions)
 
-        // ✅ Move camera to marker location after placing it
         moveCameraToLocation(location)
         zoomToSuggestion(location)
-
     }
+
 
 
     private fun showPlaceInfo(suggestion: PlaceAutocompleteSuggestion) {
@@ -796,7 +998,7 @@ class GalleryFragment : Fragment() {
         mapView.mapboxMap.easeTo(
             cameraOptions,
             mapAnimationOptions {
-                duration(2000L)
+
             }
         )
     }
@@ -835,18 +1037,6 @@ class GalleryFragment : Fragment() {
         }
     }
 
-    private fun showUserLocationMarker() {
-        userAnnotationManager.deleteAll() // optional, or keep 1 fixed marker
-        userLocation?.let { point ->
-            val userMarker = PointAnnotationOptions()
-                .withPoint(point)
-                .withTextField("You")
-                .withIconImage("custom-marker") // or a blue icon for user
-                .withIconSize(1.0)
-
-            userAnnotationManager.create(userMarker)
-        }
-    }
 
 
 
@@ -886,7 +1076,6 @@ class GalleryFragment : Fragment() {
 
 
                     binding.placeInfoContainer.visibility = View.VISIBLE
-                    binding.navigationInfoContainer.visibility = View.VISIBLE
                 }
 
                 override fun onFailure(call: Call<DirectionsResponse>, t: Throwable) {
@@ -923,7 +1112,6 @@ class GalleryFragment : Fragment() {
         // Show containers
         binding.navigationStepsLabel.visibility = View.VISIBLE
         binding.stepsScrollView.visibility = View.VISIBLE
-        binding.navigationInfoContainer.visibility = View.VISIBLE
     }
 
 
@@ -964,6 +1152,49 @@ class GalleryFragment : Fragment() {
             )
         }
     }
+    private fun searchForSimilarPlaces(category: String) {
+        if (userLocation == null) return
+
+        val similarListener = object : PlaceAutocompleteUiAdapter.SearchListener {
+            override fun onSuggestionsShown(suggestions: List<PlaceAutocompleteSuggestion>) {
+                val similarSuggestions = suggestions.filter {
+                    it.coordinate != null && it.name.isNotBlank()
+                }.sortedBy {
+                    calculateDistance(userLocation!!, it.coordinate!!)
+                }
+
+                // Clear any previous similar markers
+                searchResultAnnotationManager.deleteAll()
+
+                similarSuggestions.forEach { suggestion ->
+                    val marker = PointAnnotationOptions()
+                        .withPoint(suggestion.coordinate!!)
+                        .withTextField(suggestion.name)
+                        .withIconImage(category)
+                        .withIconSize(0.4)
+                        .withTextOffset(listOf(0.0, 1.5))
+                    searchResultAnnotationManager.create(marker)
+                }
+            }
+
+            override fun onSuggestionSelected(suggestion: PlaceAutocompleteSuggestion) {}
+            override fun onPopulateQueryClick(suggestion: PlaceAutocompleteSuggestion) {}
+            override fun onError(e: Exception) {
+                Log.e("SimilarSearch", "Error: ${e.message}")
+            }
+        }
+
+        // Replace previous listener if any
+        activeSearchListener?.let { placeAutocompleteUiAdapter.removeSearchListener(it) }
+        placeAutocompleteUiAdapter.addSearchListener(similarListener)
+        activeSearchListener = similarListener
+
+        // 🔍 Trigger the similar search
+        CoroutineScope(Dispatchers.Main).launch {
+            placeAutocompleteUiAdapter.search(category)
+        }
+    }
+
 
 
 

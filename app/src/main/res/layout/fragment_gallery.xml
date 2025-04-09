@@ -8,7 +8,7 @@
     android:background="@drawable/pic3"
     tools:context=".ui.gallery.GalleryFragment">
 
-    <!-- 🔍 Top Menu Card -->
+    <!-- 🔍 Top Search Card -->
     <androidx.cardview.widget.CardView
         android:id="@+id/menuCard"
         android:layout_width="match_parent"
@@ -101,13 +101,13 @@
         android:layout_marginTop="200dp"
         android:elevation="0dp" />
 
-    <!-- 🔘 Zoom & Toggle Button -->
+    <!-- 🔘 Zoom & Directions Buttons -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/btnZoomToLocation"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_margin="16dp"
         android:layout_gravity="bottom|end"
+        android:layout_margin="16dp"
         android:backgroundTint="@color/teal_200"
         android:contentDescription="location"
         android:src="@android:drawable/ic_menu_mylocation" />
@@ -116,141 +116,171 @@
         android:id="@+id/btnToggleDirections"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_gravity="bottom|start"
         android:layout_margin="16dp"
-        android:text="Show Directions"
-        android:layout_gravity="bottom|start" />
+        android:text="Show Directions" />
 
+    <!-- 🔽 Bottom Sheet -->
     <LinearLayout
         android:id="@+id/placeInfoBottomSheet"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="match_parent"
         android:layout_gravity="bottom"
+        android:orientation="vertical"
+        android:background="#CC000000"
+        android:padding="16dp"
         app:behavior_hideable="true"
         app:behavior_peekHeight="100dp"
-        app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior"
-        android:background="#CC000000"
-        android:orientation="vertical"
-        android:padding="16dp">
+        app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior">
 
         <ScrollView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:fillViewport="true">
-
-
-        <LinearLayout
-            android:id="@+id/placeInfoContainer"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="#CC000000"
-            android:elevation="8dp"
-            android:orientation="vertical"
-            android:padding="16dp">
-
-            <RadioGroup
-                android:id="@+id/directionToggleGroup"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal">
-
-                <RadioButton
-                    android:id="@+id/radioDriving"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:checked="true"
-                    android:text="Driving" />
-
-                <RadioButton
-                    android:id="@+id/radioWalking"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Walking" />
-            </RadioGroup>
-
-            <Button
-                android:id="@+id/btnUpdateDirections"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Update Directions" />
+            android:layout_height="match_parent"
+            android:fillViewport="true"
+            android:paddingBottom="48dp"
+            >
 
             <LinearLayout
-                android:id="@+id/navigationInfoContainer"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:paddingTop="8dp"
-                android:visibility="gone">
+                android:paddingBottom="32dp">
 
-                <TextView
-                    android:id="@+id/drivingInfo"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Driving: --"
-                    android:textColor="@android:color/white"
-                    android:textSize="14sp" />
-
-                <TextView
-                    android:id="@+id/walkingInfo"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Walking: --"
-                    android:textColor="@android:color/white"
-                    android:textSize="14sp" />
-
-                <TextView
-                    android:id="@+id/navigationStepsLabel"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Directions:"
-                    android:textStyle="bold"
-                    android:textColor="@android:color/white"
-                    android:layout_marginTop="12dp"
-                    android:visibility="gone" />
-
-                <ScrollView
-                    android:id="@+id/stepsScrollView"
+                <!-- 🏷️ Info Card -->
+                <LinearLayout
+                    android:id="@+id/placeInfoContainer"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:background="#30000000"
-                    android:fillViewport="true"
-                    android:visibility="gone">
+                    android:orientation="vertical"
+                    android:background="#CC000000"
+                    android:elevation="8dp"
+                    android:padding="16dp">
+
+                    <RadioGroup
+                        android:id="@+id/directionToggleGroup"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+
+                        <RadioButton
+                            android:id="@+id/radioDriving"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:checked="true"
+                            android:text="Driving" />
+
+                        <RadioButton
+                            android:id="@+id/radioWalking"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Walking" />
+                    </RadioGroup>
+
+                    <Button
+                        android:id="@+id/btnUpdateDirections"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Update Directions" />
 
                     <LinearLayout
-                        android:id="@+id/navigationStepsList"
+                        android:id="@+id/navigationInfoContainer"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="vertical"
-                        android:padding="8dp" />
-                </ScrollView>
+                        android:paddingTop="8dp"
+                        android:visibility="gone">
+
+                        <TextView
+                            android:id="@+id/drivingInfo"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Driving: --"
+                            android:textColor="@android:color/white"
+                            android:textSize="14sp" />
+
+                        <TextView
+                            android:id="@+id/walkingInfo"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Walking: --"
+                            android:textColor="@android:color/white"
+                            android:textSize="14sp" />
+
+                        <TextView
+                            android:id="@+id/navigationStepsLabel"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Directions:"
+                            android:textStyle="bold"
+                            android:textColor="@android:color/white"
+                            android:layout_marginTop="12dp"
+                            android:visibility="gone" />
+
+                        <ScrollView
+                            android:id="@+id/stepsScrollView"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:background="#30000000"
+                            android:fillViewport="true"
+                            android:visibility="gone">
+
+                            <LinearLayout
+                                android:id="@+id/navigationStepsList"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="vertical"
+                                android:padding="8dp" />
+                        </ScrollView>
+                    </LinearLayout>
+
+                    <ImageView
+                        android:id="@+id/btnCloseInfo"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_gravity="end"
+                        android:contentDescription="Close"
+                        android:padding="4dp"
+                        android:src="@android:drawable/ic_menu_close_clear_cancel" />
+
+                    <TextView
+                        android:id="@+id/placeName"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Place Name"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/placeAddress"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Address:"
+                        android:textSize="16sp" />
+                </LinearLayout>
+
+                <!-- 📍 Similar Places -->
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/similarPlacesRecycler"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="16dp"
+                    android:background="#EEEEEE"
+                    android:padding="8dp"
+                    android:nestedScrollingEnabled="false"
+                    android:visibility="gone"/>
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/similarSuggestionsList"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:background="#EEEEEE"
+                    android:padding="8dp"
+                    android:visibility="gone"
+                    android:nestedScrollingEnabled="false"
+                    android:clipToPadding="false"
+                    android:overScrollMode="never"/>
             </LinearLayout>
-
-            <ImageView
-                android:id="@+id/btnCloseInfo"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:layout_gravity="end"
-                android:contentDescription="Close"
-                android:padding="4dp"
-                android:src="@android:drawable/ic_menu_close_clear_cancel" />
-
-            <TextView
-                android:id="@+id/placeName"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Place Name"
-                android:textSize="18sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:id="@+id/placeAddress"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Address:"
-                android:textSize="16sp" />
-        </LinearLayout>
         </ScrollView>
-
     </LinearLayout>
-
-
-    </androidx.coordinatorlayout.widget.CoordinatorLayout>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>
