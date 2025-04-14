@@ -1,6 +1,7 @@
 package com.example.multiway.ui.suggested
 
 import android.Manifest
+import android.R.attr.category
 import android.app.AlertDialog
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -9,6 +10,7 @@ import android.graphics.Canvas
 import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.os.Bundle
+import android.util.Log
 import android.view.*
 import android.widget.*
 import androidx.core.app.ActivityCompat
@@ -29,6 +31,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
+import java.net.HttpURLConnection
 import java.net.URL
 import kotlin.math.*
 
@@ -71,14 +74,20 @@ class SuggestedFragment : Fragment() {
 
 
             binding.mapView.mapboxMap.getStyle { style ->
-                val drawable = ContextCompat.getDrawable(requireContext(), R.drawable.eventpin)
-                drawable?.let {
-                    val bitmap = drawableToBitmap(it)
-                    style.addImage("custom-marker", bitmap)
+                val eventPin = ContextCompat.getDrawable(requireContext(), R.drawable.eventpin)
+                val artIcon = ContextCompat.getDrawable(requireContext(), R.drawable.art)
+                val sportIcon = ContextCompat.getDrawable(requireContext(), R.drawable.sport)
+
+                eventPin?.let { drawable ->
+                    style.addImage("eventpin", drawableToBitmap(drawable))
+                }
+                artIcon?.let { drawable ->
+                    style.addImage("art", drawableToBitmap(drawable))
+                }
+                sportIcon?.let { drawable ->
+                    style.addImage("sport", drawableToBitmap(drawable))
                 }
             }
-
-
 
         }
     }
@@ -96,7 +105,7 @@ class SuggestedFragment : Fragment() {
 
 
     private fun setupRadiusSelector() {
-        val options = arrayOf("5 km", "10 km", "20 km")
+        val options = arrayOf("5 km", "10 km", "20 km", "50 km", "Country Wide")
 
         binding.radiusButton.setOnClickListener {
             AlertDialog.Builder(requireContext())
@@ -106,6 +115,8 @@ class SuggestedFragment : Fragment() {
                         0 -> 5.0
                         1 -> 10.0
                         2 -> 20.0
+                        3 -> 50.0
+                        4 -> -1.0
                         else -> 5.0
                     }
                     userLocation?.let { updateRadiusCircle(it) }
@@ -163,7 +174,8 @@ class SuggestedFragment : Fragment() {
                 .withFillOpacity(0.3)
         )
 
-        fetchTicketmasterEvents(center, selectedRadiusKm)
+        fetchEvents(center, selectedRadiusKm)
+
     }
 
     private fun generateCircleCoordinates(center: Point, radiusKm: Double, steps: Int = 64): List<Point> {
@@ -190,88 +202,150 @@ class SuggestedFragment : Fragment() {
         val name: String,
         val date: String,
         val venue: String,
-        val url: String
+        val url: String,
+        val location: Point,
+        val category: String
+
     )
 
-    private fun fetchTicketmasterEvents(center: Point, radiusKm: Double) {
+    private fun fetchEvents(center: Point, radiusKm: Double) {
         lifecycleScope.launch {
-            try {
-                val response = withContext(Dispatchers.IO) {
-                    val lat = center.latitude()
-                    val lon = center.longitude()
-                    val radius = radiusKm.toInt()
-                    val url = "https://app.ticketmaster.com/discovery/v2/events.json" +
-                            "?apikey=$ticketmasterApiKey&latlong=$lat,$lon&radius=$radius&unit=km"
-                    URL(url).readText()
+            val ticketmasterEvents = fetchTicketmasterEvents(center, radiusKm)
+            val predicthqEvents = fetchPredictHQEvents(center, radiusKm)
+            val allEvents = ticketmasterEvents + predicthqEvents
+
+
+            displayEventsOnMap(allEvents)
+        }
+    }
+
+
+
+    private suspend fun fetchTicketmasterEvents(center: Point, radiusKm: Double): List<EventData> {
+        val eventList = mutableListOf<EventData>()
+
+        try {
+            val response = withContext(Dispatchers.IO) {
+                val (lat, lon, radius) = if (radiusKm > 0) {
+                    Triple(center.latitude(), center.longitude(), radiusKm.toInt())
+                } else {
+                    Triple(53.4129, -8.2439, 200) // Country-wide fallback
                 }
 
-                val eventsJson = JSONObject(response)
-                val embedded = eventsJson.optJSONObject("_embedded")
-                val eventsArray = embedded?.optJSONArray("events") ?: return@launch
-
-                val eventMap = mutableMapOf<String, MutableList<Triple<String, String?, String?>>>()
-                // key = "lat,lon", value = List of (eventName, eventDate, venueName)
-
-                for (i in 0 until eventsArray.length()) {
-                    val event = eventsArray.getJSONObject(i)
-                    val name = event.optString("name")
-                    val dates = event.optJSONObject("dates")
-                    val startDate = dates?.optJSONObject("start")?.optString("localDate") ?: "Unknown date"
-                    val venues = event.optJSONObject("_embedded")?.optJSONArray("venues")
-                    val venue = venues?.optJSONObject(0)
-                    val venueName = venue?.optString("name") ?: "Unknown venue"
-                    val loc = venue?.optJSONObject("location")
-                    val lat = loc?.optString("latitude")?.toDoubleOrNull()
-                    val lon = loc?.optString("longitude")?.toDoubleOrNull()
-
-                    if (lat != null && lon != null) {
-                        val key = "$lat,$lon|$venueName"
-                        val list = eventMap.getOrPut(key) { mutableListOf() }
-                        list.add(Triple(name, startDate, venueName))
-                    }
-                }
-
-                for ((key, eventTriples) in eventMap) {
-                    val parts = key.split("|")
-                    val (lat, lon) = parts[0].split(",").map { it.toDouble() }
-                    val venueName = parts.getOrNull(1) ?: "Events at this location"
-                    val point = Point.fromLngLat(lon, lat)
-
-                    // Display a pin with optional label or leave empty
-                    val annotation = pointAnnotationManager.create(
-                        PointAnnotationOptions()
-                            .withPoint(point)
-                            .withIconImage("custom-marker")
-                            .withIconSize(1.3)
-                    )
-
-                    pointAnnotationManager.addClickListener {
-                        if (it == annotation) {
-                            val eventNames = eventTriples.map { triple -> triple.first }
-                            AlertDialog.Builder(requireContext())
-                                .setTitle(venueName)
-                                .setItems(eventNames.toTypedArray()) { _, index ->
-                                    val selected = eventTriples[index]
-                                    showEventDetails(
-                                        EventData(
-                                            name = selected.first,
-                                            date = selected.second ?: "Unknown date",
-                                            venue = selected.third ?: venueName,
-                                            url = "https://ticketmaster.com" // ✅ You can replace with actual URL if available
-                                        )
-                                    )
-                                }
-                                .setNegativeButton("Cancel", null)
-                                .show()
-
-                            true
-                        } else false
-                    }
-                }
-
-            } catch (e: Exception) {
-                Toast.makeText(requireContext(), "Failed to fetch events: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
+                val url = "https://app.ticketmaster.com/discovery/v2/events.json" +
+                        "?apikey=$ticketmasterApiKey&latlong=$lat,$lon&radius=$radius&unit=km"
+                URL(url).readText()
             }
+
+            val eventsJson = JSONObject(response)
+            val embedded = eventsJson.optJSONObject("_embedded")
+            val eventsArray = embedded?.optJSONArray("events") ?: return emptyList()
+
+            for (i in 0 until eventsArray.length()) {
+                val event = eventsArray.getJSONObject(i)
+                val name = event.optString("name")
+                val date = event.optJSONObject("dates")
+                    ?.optJSONObject("start")
+                    ?.optString("localDate") ?: "Unknown date"
+
+                val venue = event.optJSONObject("_embedded")
+                    ?.optJSONArray("venues")
+                    ?.optJSONObject(0)
+
+                val venueName = venue?.optString("name") ?: "Unknown venue"
+                val loc = venue?.optJSONObject("location")
+                val lat = loc?.optString("latitude")?.toDoubleOrNull()
+                val lon = loc?.optString("longitude")?.toDoubleOrNull()
+
+                val category = event.optJSONArray("classifications")
+                    ?.optJSONObject(0)
+                    ?.optJSONObject("segment")
+                    ?.optString("name") ?: "Other"
+
+                if (lat != null && lon != null) {
+                    val point = Point.fromLngLat(lon, lat)
+                    eventList.add(
+                        EventData(
+                            name = name,
+                            date = date,
+                            venue = venueName,
+                            url = event.optString("url") ?: "https://ticketmaster.com",
+                            location = point,
+                            category = category
+                        )
+                    )
+                }
+            }
+        } catch (e: Exception) {
+            Toast.makeText(requireContext(), "Ticketmaster error: ${e.message}", Toast.LENGTH_SHORT).show()
+        }
+
+        return eventList
+    }
+
+
+
+    private suspend fun fetchPredictHQEvents(center: Point, radiusKm: Double): List<EventData> {
+        val events = mutableListOf<EventData>()
+        val token = "ExEog2MPnfvoorzFZO8rha75S3-p8c2QyUAvtO1p"
+        val lat = center.latitude()
+        val lon = center.longitude()
+
+        return try {
+            val response = withContext(Dispatchers.IO) {
+                val url = if (radiusKm > 0) {
+                    URL("https://api.predicthq.com/v1/events/?within=${radiusKm}km@${lat},${lon}&category=concerts,sports,festivals,performing-arts,community")
+                } else {
+                    // Approximate center of Ireland and large bounding radius (~200km)
+                    URL("https://api.predicthq.com/v1/events/?within=200km@53.4129,-8.2439&category=concerts,sports,festivals,performing-arts,community")
+                }
+
+                val connection = url.openConnection() as HttpURLConnection
+                connection.setRequestProperty("Authorization", "Bearer $token")
+                connection.setRequestProperty("Accept", "application/json")
+                connection.connectTimeout = 10000
+                connection.readTimeout = 10000
+
+                if (connection.responseCode == 200) {
+                    connection.inputStream.bufferedReader().readText()
+                } else {
+                    throw Exception("HTTP ${connection.responseCode}: ${connection.responseMessage}")
+                }
+            }
+
+            val json = JSONObject(response)
+            val results = json.optJSONArray("results") ?: return emptyList()
+
+            for (i in 0 until results.length()) {
+                val item = results.getJSONObject(i)
+                val title = item.optString("title", "Unnamed Event")
+                val start = item.optString("start", "Unknown date")
+                val category = item.optString("category", "Other")
+                val locationArray = item.optJSONArray("location")
+                val latV = locationArray?.optDouble(1)
+                val lonV = locationArray?.optDouble(0)
+
+                if (latV != null && lonV != null) {
+                    val point = Point.fromLngLat(lonV, latV)
+                    events.add(
+                        EventData(
+                            name = title,
+                            date = start,
+                            venue = "PredictHQ Event",
+                            url = "https://www.predicthq.com",
+                            location = point,
+                            category = category
+                        )
+                    )
+                }
+            }
+
+            events
+        } catch (e: Exception) {
+            withContext(Dispatchers.Main) {
+                Toast.makeText(requireContext(), "PredictHQ error: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
+            }
+            emptyList()
         }
     }
 
@@ -285,13 +359,51 @@ class SuggestedFragment : Fragment() {
         dialogView.findViewById<TextView>(R.id.eventDate).text = "📅 ${event.date}"
         dialogView.findViewById<TextView>(R.id.eventVenue).text = "📍 ${event.venue}"
         dialogView.findViewById<Button>(R.id.viewMoreButton).setOnClickListener {
-            val urlIntent = Intent(Intent.ACTION_VIEW, android.net.Uri.parse(event.url))
+            val urlIntent = Intent(Intent.ACTION_VIEW, Uri.parse(event.url))
             startActivity(urlIntent)
         }
 
         dialog.show()
     }
 
+    private fun displayEventsOnMap(events: List<EventData>) {
+        pointAnnotationManager.deleteAll()
+
+        val grouped = events.groupBy { "${it.location.latitude()},${it.location.longitude()}" }
+
+        for ((_, group) in grouped) {
+            val location = group.first().location
+            val firstEvent = group.first()
+
+            val iconName = when {
+                firstEvent.category.contains("sports", ignoreCase = true) -> "sport"
+                firstEvent.category.contains("art", ignoreCase = true) ||
+                        firstEvent.category.contains("performing", ignoreCase = true) -> "art"
+                else -> "eventpin"
+            }
+
+            val marker = pointAnnotationManager.create(
+                PointAnnotationOptions()
+                    .withPoint(location)
+                    .withIconImage(iconName)
+                    .withIconSize(1.0)
+            )
+
+            pointAnnotationManager.addClickListener {
+                if (it == marker) {
+                    val eventNames = group.map { e -> e.name }.toTypedArray()
+                    AlertDialog.Builder(requireContext())
+                        .setTitle(group.first().venue)
+                        .setItems(eventNames) { _, index ->
+                            showEventDetails(group[index])
+                        }
+                        .setNegativeButton("Close", null)
+                        .show()
+                    true
+                } else false
+            }
+        }
+    }
 
 
 

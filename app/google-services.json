@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "854409821680",
-    "project_id": "pleasework12345678",
-    "storage_bucket": "pleasework12345678.firebasestorage.app"
+    "project_number": "937082142239",
+    "project_id": "multiway-a23c2",
+    "storage_bucket": "multiway-a23c2.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:854409821680:android:8250ed92e82fc3c63a7135",
+        "mobilesdk_app_id": "1:937082142239:android:2d00a30214436fb5e79f2a",
         "android_client_info": {
           "package_name": "com.example.multiway"
         }
@@ -15,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyBZGu2jE5hUMo0tGR3D7UTfX3r0g2dxbGE"
+          "current_key": "AIzaSyC3jtVZqnAucbb5gIcYQRE5ZselHnHSa-U"
         }
       ],
       "services": {
