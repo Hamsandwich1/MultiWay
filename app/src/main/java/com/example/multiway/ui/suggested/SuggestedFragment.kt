@@ -96,27 +96,24 @@ class SuggestedFragment : Fragment() {
 
 
     private fun setupRadiusSelector() {
-        val adapter = ArrayAdapter.createFromResource(
-            requireContext(),
-            R.array.radius_options,
-            android.R.layout.simple_spinner_dropdown_item
-        )
-        binding.radiusSelector.adapter = adapter
+        val options = arrayOf("5 km", "10 km", "20 km")
 
-        binding.radiusSelector.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
-                selectedRadiusKm = when (position) {
-                    0 -> 5.0
-                    1 -> 10.0
-                    2 -> 20.0
-                    else -> 5.0
+        binding.radiusButton.setOnClickListener {
+            AlertDialog.Builder(requireContext())
+                .setTitle("Select Radius")
+                .setItems(options) { _, which ->
+                    selectedRadiusKm = when (which) {
+                        0 -> 5.0
+                        1 -> 10.0
+                        2 -> 20.0
+                        else -> 5.0
+                    }
+                    userLocation?.let { updateRadiusCircle(it) }
                 }
-                userLocation?.let { updateRadiusCircle(it) }
-            }
-
-            override fun onNothingSelected(parent: AdapterView<*>?) {}
+                .show()
         }
     }
+
 
     private fun enableUserLocation() {
         val locationPlugin = binding.mapView.location

@@ -64,36 +64,3 @@ class SignupFragment : Fragment() {
     }
 }
 
-                /* Check if the username already exists
-                reference.child(username).get().addOnCompleteListener { task ->
-                    //if (task.isSuccessful) {
-                        //if (task.result.exists()) {
-                            Toast.makeText(requireContext(), "Username already exists", Toast.LENGTH_SHORT).show()
-                        } else {
-                            // Save the new user
-                            reference.child(username).setValue(password).addOnCompleteListener { saveTask ->
-                                if (saveTask.isSuccessful) {
-                                    Toast.makeText(requireContext(), "Signup successful!", Toast.LENGTH_SHORT).show()
-                                    findNavController().navigate(R.id.action_signupFragment_to_loginFragment)
-                                } else {
-                                    Toast.makeText(requireContext(), "Failed to register. Try again.", Toast.LENGTH_SHORT).show()
-                                }
-                            }
-                     }
-                    } else {
-                        Toast.makeText(requireContext(), "Database error. Try again later.", Toast.LENGTH_SHORT).show()
-                    }
-                }
-            } else {
-                Toast.makeText(requireContext(), "Please fill in all fields.", Toast.LENGTH_SHORT).show()
-            }
-        }
-
-        return view
-    }
-
-
-
-            }
-    }
-    */

@@ -20,7 +20,9 @@
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
-        android:background="?attr/colorPrimary"
+        android:background="@android:color/transparent"
+        app:layout_anchor="@+id/toolbar"
+        app:layout_anchorGravity="center"
         app:popupTheme="@style/Theme.MultiWay.PopupOverlay" />
 
 

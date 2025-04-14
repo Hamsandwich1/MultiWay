@@ -8,16 +8,19 @@
     <com.mapbox.maps.MapView
         android:id="@+id/mapView"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent" >
 
-    <!-- Spinner floats over map -->
-    <Spinner
-        android:id="@+id/radiusSelector"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="100dp"
-        android:layout_marginEnd="16dp"
-        android:layout_gravity="top|end"
-        android:background="@android:color/white"
-        android:elevation="8dp" />
+        <ImageButton
+            android:id="@+id/radiusButton"
+            android:layout_width="123dp"
+            android:layout_height="161dp"
+            android:layout_gravity="top|end"
+            android:layout_margin="16dp"
+            android:layout_marginTop="150dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Change radius"
+            android:elevation="8dp"
+            android:src="@drawable/distance" />
+    </com.mapbox.maps.MapView>
+
 </FrameLayout>
