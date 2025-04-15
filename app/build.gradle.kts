@@ -65,7 +65,7 @@ dependencies {
     implementation(libs.mapbox.search.ui)
     implementation(libs.mapbox.autocomplete)
     implementation(libs.mapbox.directions)
-
+    implementation(libs.firebase.auth)
 
     testImplementation(libs.junit)
     implementation(libs.google.play.services.location)

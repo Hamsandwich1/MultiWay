@@ -1,7 +1,6 @@
 package com.example.multiway.ui.suggested
 
 import android.Manifest
-import android.R.attr.category
 import android.app.AlertDialog
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -10,7 +9,6 @@ import android.graphics.Canvas
 import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.os.Bundle
-import android.util.Log
 import android.view.*
 import android.widget.*
 import androidx.core.app.ActivityCompat
@@ -18,9 +16,12 @@ import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import com.example.multiway.R
-import com.example.multiway.databinding.FragmentNearbyEventsBinding
+import com.example.multiway.databinding.EventsBinding
+import com.example.multiway.ui.history.HistoryItem
 import com.google.android.gms.location.LocationServices
 import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.FirebaseDatabase
 import com.mapbox.geojson.*
 import com.mapbox.maps.*
 import com.mapbox.maps.extension.style.style
@@ -38,9 +39,9 @@ import kotlin.math.*
 
 
 
-class SuggestedFragment : Fragment() {
+class EventsFragment : Fragment() {
 
-    private var _binding: FragmentNearbyEventsBinding? = null
+    private var _binding: EventsBinding? = null
     private val binding get() = _binding!!
     private var userLocation: Point? = null
     private lateinit var circleAnnotationManager: PolygonAnnotationManager
@@ -52,7 +53,7 @@ class SuggestedFragment : Fragment() {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        _binding = FragmentNearbyEventsBinding.inflate(inflater, container, false)
+        _binding = EventsBinding.inflate(inflater, container, false)
         return binding.root
     }
 
@@ -363,6 +364,9 @@ class SuggestedFragment : Fragment() {
             startActivity(urlIntent)
         }
 
+        saveToHistory(event.name, "Viewed event at ${event.venue}")
+
+
         dialog.show()
     }
 
@@ -411,4 +415,15 @@ class SuggestedFragment : Fragment() {
         super.onDestroyView()
         _binding = null
     }
+
+    private fun saveToHistory(title: String, subtitle: String) {
+        val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
+        val historyRef = FirebaseDatabase.getInstance().getReference("History").child(userId)
+
+        val item = HistoryItem(title = title, subtitle = subtitle)
+        historyRef.push().setValue(item)
+    }
+
+
+
 }

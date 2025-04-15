@@ -29,7 +29,7 @@
 
     <fragment
         android:id="@+id/nav_suggested"
-        android:name="com.example.multiway.ui.suggested.SuggestedFragment"
+        android:name="com.example.multiway.ui.suggested.EventsFragment"
         android:label="Suggested"
         tools:layout="@layout/fragment_suggested" >
 
@@ -37,9 +37,9 @@
 
     <fragment
         android:id="@+id/nav_companion"
-        android:name="com.example.multiway.ui.companion.CompanionFragment"
+        android:name="com.example.multiway.ui.account.AccountFragment"
         android:label="Companion"
-        tools:layout="@layout/fragment_companion" >
+        tools:layout="@layout/fragment_account" >
 
     </fragment>
 
@@ -60,6 +60,12 @@
             app:destination="@id/nav_home" />
 
     </fragment>
+
+
+    <fragment
+        android:id="@+id/loginFragment"
+        android:name="com.example.multiway.LoginFragment"
+        android:label="Login" />
 
 
     <fragment

@@ -80,6 +80,15 @@
                 android:text="Your first time here? Sign up"
                 android:textColor="@color/lavender" />
 
+            <CheckBox
+                android:id="@+id/remember_me_checkbox"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Remember Me"
+                android:textColor="@color/black"
+                android:layout_marginTop="16dp"/>
+
+
 
         </LinearLayout>
     </androidx.cardview.widget.CardView>

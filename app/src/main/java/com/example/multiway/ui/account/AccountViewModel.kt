@@ -1,4 +1,4 @@
-package com.example.multiway.ui.companion
+package com.example.multiway.ui.account
 
 import androidx.lifecycle.ViewModel
 

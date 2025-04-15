@@ -76,7 +76,9 @@ import com.mapbox.maps.toCameraOptions
 import kotlinx.coroutines.withContext
 import java.util.Locale
 import com.example.multiway.ui.gallery.SimilarPlacesAdapter
-
+import com.example.multiway.ui.history.HistoryItem
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.FirebaseDatabase
 
 
 class GalleryFragment : Fragment() {
@@ -512,6 +514,7 @@ class GalleryFragment : Fragment() {
             }
         })
 
+
     }
 
     private fun filterPOIsByPartyType(partyType: String) {
@@ -805,6 +808,8 @@ class GalleryFragment : Fragment() {
 
                 // Marker for selected place
                 addSearchMarker(location, placeName, category)
+
+                saveToHistory(placeName, "Searched location")
 
 
                 lifecycleScope.launch {
@@ -1206,5 +1211,13 @@ class GalleryFragment : Fragment() {
         super.onDestroyView()
         _binding = null
     }
-}
 
+    private fun saveToHistory(title: String, subtitle: String) {
+        val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
+        val historyRef = FirebaseDatabase.getInstance().getReference("History").child(userId)
+
+        val item = HistoryItem(title = title, subtitle = subtitle)
+        historyRef.push().setValue(item)
+    }
+
+}
