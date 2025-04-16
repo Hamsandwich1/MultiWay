@@ -113,6 +113,9 @@ class GalleryFragment : Fragment() {
     private var activeSearchListener: PlaceAutocompleteUiAdapter.SearchListener? = null
     private lateinit var similarPlacesRecycler: RecyclerView
     private lateinit var similarPlaceAdapter: SimilarPlacesAdapter
+    private var lastKnownLocation: Point? = null
+
+
 
 
     data class SimilarPlaceItem(
@@ -210,6 +213,15 @@ class GalleryFragment : Fragment() {
         }
 
 
+        userLocation?.let { location ->
+            val userMarker = PointAnnotationOptions()
+                .withPoint(location)
+                .withIconImage("custom-marker") // your custom icon name
+                .withIconSize(0.5)
+
+            userAnnotationManager.create(userMarker)
+        }
+
 
         val annotationPlugin = mapView.annotations
         selectedPlaceAnnotationManager = annotationPlugin.createPointAnnotationManager()
@@ -222,8 +234,12 @@ class GalleryFragment : Fragment() {
         polylineAnnotationManager = mapView.annotations.createPolylineAnnotationManager()
 
         zoomToUserLocation {
-            // 🔥 Only perform search after location is ready
-            performSearch(queryEditText.text.toString())
+            // Only trigger search once location is fully set
+            if (userLocation != null) {
+                performSearch(queryEditText.text.toString())
+            } else {
+                Toast.makeText(requireContext(), "Waiting for accurate location...", Toast.LENGTH_SHORT).show()
+            }
         }
 
 
@@ -396,7 +412,6 @@ class GalleryFragment : Fragment() {
             PlaceAutocompleteUiAdapter.SearchListener {
 
             override fun onSuggestionsShown(suggestions: List<PlaceAutocompleteSuggestion>) {
-                // If userLocation isn't available yet, fetch it and re-trigger search
                 if (userLocation == null) {
                     zoomToUserLocation {
                         lifecycleScope.launch {
@@ -571,6 +586,7 @@ class GalleryFragment : Fragment() {
                     .filter { it.coordinate != null }
                     .sortedBy { suggestion -> calculateDistance(userLocation!!, suggestion.coordinate!!) }
 
+
                 // 🔥 Remove all previous search results
                 searchResultAnnotationManager.deleteAll()
                 selectedPlaceAnnotationManager.deleteAll()
@@ -687,16 +703,39 @@ class GalleryFragment : Fragment() {
             return
         }
 
-        fusedLocationClient.lastLocation.addOnSuccessListener { location ->
-            if (location != null) {
-                userLocation = Point.fromLngLat(location.longitude, location.latitude)
-                moveCameraToLocation(userLocation!!)
-                onLocated?.invoke() // Run this after location is set
-            } else {
-                Log.e("Location", "Last location is null!")
+        val locationRequest = com.google.android.gms.location.LocationRequest.Builder(
+            Priority.PRIORITY_HIGH_ACCURACY, 1000
+        ).apply {
+            setMaxUpdateAgeMillis(0) // ⚡ Get the freshest data
+            setMinUpdateIntervalMillis(1000)
+        }.build()
+
+        val tempLocationCallback = object : LocationCallback() {
+            override fun onLocationResult(result: LocationResult) {
+                val location = result.lastLocation
+                if (location != null) {
+                    val point = Point.fromLngLat(location.longitude, location.latitude)
+                    userLocation = point
+                    lastKnownLocation = point
+                    moveCameraToLocation(point)
+                    onLocated?.invoke()
+                } else {
+                    Toast.makeText(requireContext(), "Unable to get updated location", Toast.LENGTH_SHORT).show()
+                }
+
+                // ✅ Remove callback after first result to save battery
+                fusedLocationClient.removeLocationUpdates(this)
             }
         }
+
+        fusedLocationClient.requestLocationUpdates(
+            locationRequest,
+            tempLocationCallback,
+            Looper.getMainLooper()
+        )
     }
+
+
 
 
     private fun performCategorySearch(categoryLabel: String) {
@@ -731,15 +770,17 @@ class GalleryFragment : Fragment() {
                         ).show()
                         return
                     }
-                    val validSuggestions =
-                        suggestions.filter { it.coordinate != null && it.name.isNotBlank() }
 
-                    // ✅ Sort by distance from user location
-                    val sortedSuggestions = validSuggestions.sortedBy { suggestion ->
-                        suggestion.coordinate?.let { coord ->
-                            userLocation?.let { userLoc -> calculateDistance(userLoc, coord) }
-                        } ?: Double.MAX_VALUE
+                    if (userLocation == null) {
+                        Log.w("Search", "User location not ready — skipping sort.")
+                        return
                     }
+
+                    val sortedSuggestions = suggestions
+                        .filter { it.coordinate != null && it.name.isNotBlank() }
+                        .sortedBy {
+                            calculateDistance(userLocation!!, it.coordinate!!)
+                        }
 
 
                     // ✅ Map to display items with accurate distance
@@ -814,7 +855,6 @@ class GalleryFragment : Fragment() {
 
                 lifecycleScope.launch {
                     val similarSuggestions = suggestionsNearby(location, "restaurant")
-                    // continue with UI updates...
 
                     if (similarSuggestions.isNotEmpty()) {
                         val convertedSuggestions = similarSuggestions.map {
@@ -1045,7 +1085,6 @@ class GalleryFragment : Fragment() {
 
 
 
-
     private fun fetchRouteDetailsAndStartUpdates(destination: Point) {
         val origin = userLocation ?: return
 
@@ -1157,50 +1196,6 @@ class GalleryFragment : Fragment() {
             )
         }
     }
-    private fun searchForSimilarPlaces(category: String) {
-        if (userLocation == null) return
-
-        val similarListener = object : PlaceAutocompleteUiAdapter.SearchListener {
-            override fun onSuggestionsShown(suggestions: List<PlaceAutocompleteSuggestion>) {
-                val similarSuggestions = suggestions.filter {
-                    it.coordinate != null && it.name.isNotBlank()
-                }.sortedBy {
-                    calculateDistance(userLocation!!, it.coordinate!!)
-                }
-
-                // Clear any previous similar markers
-                searchResultAnnotationManager.deleteAll()
-
-                similarSuggestions.forEach { suggestion ->
-                    val marker = PointAnnotationOptions()
-                        .withPoint(suggestion.coordinate!!)
-                        .withTextField(suggestion.name)
-                        .withIconImage(category)
-                        .withIconSize(0.4)
-                        .withTextOffset(listOf(0.0, 1.5))
-                    searchResultAnnotationManager.create(marker)
-                }
-            }
-
-            override fun onSuggestionSelected(suggestion: PlaceAutocompleteSuggestion) {}
-            override fun onPopulateQueryClick(suggestion: PlaceAutocompleteSuggestion) {}
-            override fun onError(e: Exception) {
-                Log.e("SimilarSearch", "Error: ${e.message}")
-            }
-        }
-
-        // Replace previous listener if any
-        activeSearchListener?.let { placeAutocompleteUiAdapter.removeSearchListener(it) }
-        placeAutocompleteUiAdapter.addSearchListener(similarListener)
-        activeSearchListener = similarListener
-
-        // 🔍 Trigger the similar search
-        CoroutineScope(Dispatchers.Main).launch {
-            placeAutocompleteUiAdapter.search(category)
-        }
-    }
-
-
 
 
     private fun moveCameraToLocation(location: Point) {

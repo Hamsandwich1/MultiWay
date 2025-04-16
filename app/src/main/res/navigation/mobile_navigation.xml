@@ -17,6 +17,11 @@
         android:label="@string/menu_gallery"
         tools:layout="@layout/fragment_gallery" />
 
+<fragment
+        android:id="@+id/nav_events"
+        android:name="com.example.multiway.ui.events.EventsFragment"
+        android:label="Events"
+        tools:layout="@layout/events" />
 
     <fragment
         android:id="@+id/nav_history"
@@ -27,11 +32,13 @@
     </fragment>
 
 
+
+
     <fragment
         android:id="@+id/nav_suggested"
-        android:name="com.example.multiway.ui.suggested.EventsFragment"
+        android:name="com.example.multiway.ui.suggested.SuggestedFragment"
         android:label="Suggested"
-        tools:layout="@layout/fragment_suggested" >
+        tools:layout="@layout/fragment_suggestedroutes" >
 
     </fragment>
 

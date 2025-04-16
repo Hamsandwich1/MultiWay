@@ -17,8 +17,14 @@
             android:id="@+id/nav_history"
             android:icon="@android:drawable/ic_menu_myplaces"
             android:title="History" />
+
         <item
             android:id="@+id/nav_suggested"
+            android:icon="@android:drawable/ic_menu_myplaces"
+            android:title="Routes" />
+
+        <item
+            android:id="@+id/nav_events"
             android:icon="@android:drawable/ic_menu_week"
             android:title="Near You " />
 

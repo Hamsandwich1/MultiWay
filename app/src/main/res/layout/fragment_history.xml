@@ -34,7 +34,8 @@
         android:layout_width="367dp"
         android:layout_height="577dp"
         android:clipToPadding="false"
-        android:paddingBottom="16dp" />
+        android:paddingBottom="16dp"
+        android:background="@color/white"/>
 
 
 </LinearLayout>

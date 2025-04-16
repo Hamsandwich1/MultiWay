@@ -1,4 +1,4 @@
-package com.example.multiway.ui.suggested
+package com.example.multiway.ui.events
 
 import android.Manifest
 import android.app.AlertDialog
