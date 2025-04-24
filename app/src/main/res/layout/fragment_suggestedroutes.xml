@@ -1,63 +1,74 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/suggestedRoot"
+<androidx.coordinatorlayout.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:mapbox="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="12dp"
-    android:background="@drawable/pic13">
+    android:layout_height="match_parent">
 
-    <TextView
-        android:id="@+id/suggestedTitle"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Pick your interests:"
-        android:textSize="16sp"
-        android:textStyle="bold"
-        android:layout_marginBottom="8dp"
-        android:layout_marginTop="100dp"/>
-
-    <!-- Preferences -->
-    <LinearLayout
-        android:id="@+id/checkboxContainer"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal">
-
-        <CheckBox
-            android:id="@+id/checkRestaurants"
-            android:layout_width="wrap_content"
-            android:layout_height="38dp"
-            android:text="Restaurants" />
-        <CheckBox android:id="@+id/checkPubs" android:text="Pubs" android:layout_height="30dp" android:layout_width="100dp"/>
-
-        <CheckBox
-            android:id="@+id/checkParks"
-            android:layout_width="100dp"
-            android:layout_height="30dp"
-            android:text="Parks" />
-    </LinearLayout>
-
-    <Button
-        android:id="@+id/btnSuggest"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Suggest Places"
-        android:layout_marginTop="8dp"
-        android:layout_marginBottom="12dp" />
-
-    <!-- Suggestion cards -->
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recyclerSuggestions"
-        android:layout_width="match_parent"
-        android:layout_height="128dp"
-        android:paddingStart="8dp"
-        android:paddingEnd="8dp" />
-
-    <!-- MapView -->
     <com.mapbox.maps.MapView
         android:id="@+id/mapView"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1" />
-</LinearLayout>
+        android:layout_height="match_parent"
+        mapbox:mapbox_cameraTargetLat="53.3498"
+        mapbox:mapbox_cameraTargetLng="-6.2603"
+        mapbox:mapbox_cameraZoom="13" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:fillViewport="true"
+        android:layout_marginTop="250dp"
+        android:elevation="8dp">
+
+        <LinearLayout
+            android:orientation="vertical"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="16dp"
+            android:background="@color/purple_200"
+            >
+
+            <LinearLayout
+                android:orientation="horizontal"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="8dp">
+
+                <CheckBox
+                    android:id="@+id/checkRestaurants"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Restaurants"
+                    android:layout_marginEnd="8dp"/>
+
+                <CheckBox
+                    android:id="@+id/checkPubs"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Pubs"
+                    android:layout_marginEnd="8dp"/>
+
+                <CheckBox
+                    android:id="@+id/checkParks"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Parks" />
+            </LinearLayout>
+
+            <Button
+                android:id="@+id/btnFetchSuggestions"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Suggest Places" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recyclerView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:nestedScrollingEnabled="false"
+                android:layout_marginTop="8dp"/>
+        </LinearLayout>
+    </ScrollView>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

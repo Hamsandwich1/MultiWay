@@ -280,6 +280,7 @@ class GalleryFragment : Fragment() {
 
 
 
+
             // ✅ Enable User Location & Zoom to User
             enableUserLocation()
             zoomToUserLocation()
@@ -434,6 +435,8 @@ class GalleryFragment : Fragment() {
 
 
 
+
+
                 // Map to your custom display list
                 val displayList = sortedSuggestions.map { suggestion ->
                     SearchResultItem(
@@ -583,7 +586,7 @@ class GalleryFragment : Fragment() {
                 if (userLocation == null) return
 
                 val sorted = suggestions
-                    .filter { it.coordinate != null }
+                    .filter { it.coordinate != null && detectCategory(it) == category }
                     .sortedBy { suggestion -> calculateDistance(userLocation!!, suggestion.coordinate!!) }
 
 
@@ -740,7 +743,7 @@ class GalleryFragment : Fragment() {
 
     private fun performCategorySearch(categoryLabel: String) {
         val categoryMap = mapOf(
-            "Pubs" to "pub",
+            "Pubs" to "bar OR bar",
             "Restaurants" to "restaurant",
             "Parks" to "park",
             "Hotels" to "hotel",
@@ -960,16 +963,28 @@ class GalleryFragment : Fragment() {
 
     private fun detectCategory(suggestion: PlaceAutocompleteSuggestion): String {
         val name = suggestion.name.lowercase(Locale.ROOT)
+
         return when {
-            name.contains("restaurant") -> "restaurant"
-            name.contains("pub") || name.contains("bar") -> "pub"
-            name.contains("park") -> "park"
-            name.contains("hotel") -> "hotel"
-            name.contains("shop") || name.contains("store") -> "shop"
-            name.contains("museum") || name.contains("landmark") || name.contains("monument") -> "tourist_attraction"
+            name.contains("restaurant") || name.contains("grill") || name.contains("bistro") ||
+                    name.contains("steakhouse") || name.contains("diner") -> "restaurant"
+
+            name.contains("pub") || name.contains("bar") || name.contains("tavern") ||
+                    name.contains("lounge") || name.contains("saloon") -> "pub"
+
+            name.contains("park") || name.contains("garden") || name.contains("greens") -> "park"
+
+            name.contains("hotel") || name.contains("inn") || name.contains("resort") -> "hotel"
+
+            name.contains("shop") || name.contains("store") || name.contains("boutique") -> "shop"
+
+            name.contains("museum") || name.contains("landmark") || name.contains("monument") || name.contains("attraction") -> "tourist_attraction"
+
             else -> "default"
         }
     }
+
+
+
 
     private fun addSearchMarker(location: Point, title: String?, category: String?) {
         selectedPlaceAnnotationManager.deleteAll() // ✅ clear first
@@ -1168,15 +1183,18 @@ class GalleryFragment : Fragment() {
 
         locationCallback = object : LocationCallback() {
             override fun onLocationResult(result: LocationResult) {
-                val now = System.currentTimeMillis()
-                if (now - lastRouteUpdateTime < 15000) return // wait at least 15s
-                lastRouteUpdateTime = now
+                    if (!isAdded) return  // <- Prevent crash
 
-                val newLoc = result.lastLocation ?: return
-                userLocation = Point.fromLngLat(newLoc.longitude, newLoc.latitude)
-                fetchRouteDetailsAndStartUpdates(destination)
+                    val now = System.currentTimeMillis()
+                    if (now - lastRouteUpdateTime < 15000) return
+                    lastRouteUpdateTime = now
+
+                    val newLoc = result.lastLocation ?: return
+                    userLocation = Point.fromLngLat(newLoc.longitude, newLoc.latitude)
+                    fetchRouteDetailsAndStartUpdates(destination)
+                }
+
             }
-        }
 
         if (ActivityCompat.checkSelfPermission(
                 requireContext(),
@@ -1216,3 +1234,4 @@ class GalleryFragment : Fragment() {
     }
 
 }
+

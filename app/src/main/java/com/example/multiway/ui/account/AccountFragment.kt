@@ -33,7 +33,6 @@ class AccountFragment : Fragment() {
 
         if (user != null) {
             binding.userEmail.text = user.email ?: "N/A"
-            binding.userUid.text = user.uid
         } else {
             Toast.makeText(requireContext(), "No user logged in", Toast.LENGTH_SHORT).show()
             findNavController().navigate(R.id.loginFragment)
