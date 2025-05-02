@@ -83,7 +83,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="68dp"
         android:fontFamily="sans-serif-medium"
-        android:text="Welcome to MultiWay"
+        android:text="Welcome back ! "
         android:textColor="#333333"
         android:textSize="24sp"
         app:layout_constraintEnd_toEndOf="parent"

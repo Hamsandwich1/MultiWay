@@ -35,13 +35,13 @@ class AccountFragment : Fragment() {
             binding.userEmail.text = user.email ?: "N/A"
         } else {
             Toast.makeText(requireContext(), "No user logged in", Toast.LENGTH_SHORT).show()
-            findNavController().navigate(R.id.loginFragment)
+            findNavController().navigate(R.id.nav_login)
         }
 
         binding.logoutButton.setOnClickListener {
             auth.signOut()
             Toast.makeText(requireContext(), "Logged out", Toast.LENGTH_SHORT).show()
-            findNavController().navigate(R.id.loginFragment)
+            findNavController().navigate(R.id.nav_login)
         }
     }
 

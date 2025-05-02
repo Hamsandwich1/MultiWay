@@ -1,14 +1,13 @@
 package com.example.multiway.ui.suggested
 
 import android.Manifest
-import android.annotation.SuppressLint
 import android.content.pm.PackageManager
 import android.graphics.BitmapFactory
 import android.os.Bundle
 import android.os.Looper
 import android.util.Log
 import android.view.*
-import android.widget.Toast
+import android.widget.*
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
@@ -16,23 +15,16 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.multiway.R
 import com.example.multiway.databinding.FragmentSuggestedroutesBinding
 import com.google.android.gms.location.*
-import com.mapbox.api.directions.v5.DirectionsCriteria
-import com.mapbox.api.directions.v5.MapboxDirections
-import com.mapbox.api.directions.v5.models.DirectionsResponse
-import com.mapbox.geojson.LineString
 import com.mapbox.geojson.Point
 import com.mapbox.maps.CameraOptions
 import com.mapbox.maps.Style
-import com.mapbox.maps.plugin.LocationPuck2D
 import com.mapbox.maps.plugin.annotation.annotations
 import com.mapbox.maps.plugin.annotation.generated.*
 import com.mapbox.maps.plugin.locationcomponent.location
+import com.mapbox.maps.toCameraOptions
 import com.mapbox.search.autocomplete.PlaceAutocomplete
 import com.mapbox.search.autocomplete.PlaceAutocompleteSuggestion
 import kotlinx.coroutines.*
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
 import kotlin.math.*
 
 class SuggestedFragment : Fragment() {
@@ -45,14 +37,19 @@ class SuggestedFragment : Fragment() {
     private lateinit var pointAnnotationManager: PointAnnotationManager
     private lateinit var polylineAnnotationManager: PolylineAnnotationManager
 
+
     private val suggestions = mutableListOf<SuggestedPlaceItem>()
     private lateinit var adapter: SuggestedPlaceAdapter
     private var userLocation: Point? = null
 
-    override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View {
+    private val routeTypeCategories = mapOf(
+        "Romantic Walk" to listOf("scenic", "cafe", "park"),
+        "Family Day Out" to listOf("zoo", "museum", "park"),
+        "Solo Exploring" to listOf("landmark", "restaurant"),
+        "Pub Crawl" to listOf("pub", "bar")
+    )
+
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         _binding = FragmentSuggestedroutesBinding.inflate(inflater, container, false)
         return binding.root
     }
@@ -63,12 +60,8 @@ class SuggestedFragment : Fragment() {
 
         binding.mapView.mapboxMap.loadStyle(Style.MAPBOX_STREETS) { style ->
             pointAnnotationManager = binding.mapView.annotations.createPointAnnotationManager()
-            polylineAnnotationManager = binding.mapView.annotations.createPolylineAnnotationManager()
-
-            // Add custom icon for POIs
-            val bitmap = BitmapFactory.decodeResource(resources, R.drawable.tour)
-            style.addImage("tour", bitmap)
-
+            val bitmap = BitmapFactory.decodeResource(resources, R.drawable.route)
+            style.addImage("route", bitmap)
             enableUserLocation()
         }
 
@@ -77,72 +70,54 @@ class SuggestedFragment : Fragment() {
                 Toast.makeText(requireContext(), "Clicked: ${item.name}", Toast.LENGTH_SHORT).show()
             }
         }
-
-        binding.recyclerView.layoutManager = LinearLayoutManager(requireContext())
-        binding.recyclerView.adapter = adapter
-
-        binding.btnFetchSuggestions.setOnClickListener {
-            val query = buildQueryFromCheckboxes()
-            if (query.isNotEmpty()) {
-                fetchSuggestions(query)
-            } else {
-                Toast.makeText(requireContext(), "Select at least one category", Toast.LENGTH_SHORT).show()
-            }
-        }
-    }
-
-    private fun buildQueryFromCheckboxes(): String {
-        val selected = mutableListOf<String>()
-        if (binding.checkRestaurants.isChecked) selected.add("restaurant")
-        if (binding.checkPubs.isChecked) selected.add("pub")
-        if (binding.checkParks.isChecked) selected.add("park")
-        return selected.joinToString(" OR ")
-    }
-
-    private fun enableUserLocation() {
-        if (ContextCompat.checkSelfPermission(
-                requireContext(),
-                Manifest.permission.ACCESS_FINE_LOCATION
-            ) != PackageManager.PERMISSION_GRANTED
-        ) {
-            ActivityCompat.requestPermissions(
-                requireActivity(),
-                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
-                100
-            )
-            return
-        }
-        zoomToUserLocation()
-
-
         binding.mapView.location.updateSettings {
             enabled = true
             pulsingEnabled = true
         }
 
+        polylineAnnotationManager = binding.mapView.annotations.createPolylineAnnotationManager()
 
+        binding.recyclerView.layoutManager = LinearLayoutManager(requireContext())
+        binding.recyclerView.adapter = adapter
+
+        binding.btnFetchSuggestions.setOnClickListener {
+            val routeType = binding.routeType.selectedItem.toString()
+            val categories = if (routeType != "None") {
+                routeTypeCategories[routeType] ?: listOf()
+            } else {
+                buildQueryFromCheckboxes()
+            }
+
+            if (categories.isNotEmpty()) {
+                suggestPlaces(categories)
+            } else {
+                Toast.makeText(requireContext(), "Select categories or route type", Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 
-    @SuppressLint("MissingPermission")
-    private fun zoomToUserLocation() {
-        fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireActivity())
+    private fun buildQueryFromCheckboxes(): List<String> {
+        val selected = mutableListOf<String>()
+        if (binding.checkRestaurants.isChecked) selected.add("restaurant")
+        if (binding.checkPubs.isChecked) selected.add("pub")
+        if (binding.checkParks.isChecked) selected.add("park")
+        return selected
+    }
 
-        val request = LocationRequest.Builder(
-            Priority.PRIORITY_HIGH_ACCURACY, 1000
-        ).build()
+    private fun enableUserLocation() {
+        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION)
+            != PackageManager.PERMISSION_GRANTED
+        ) {
+            ActivityCompat.requestPermissions(requireActivity(), arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), 1)
+            return
+        }
 
+        val request = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 1000).build()
         val callback = object : LocationCallback() {
             override fun onLocationResult(result: LocationResult) {
                 val location = result.lastLocation ?: return
                 userLocation = Point.fromLngLat(location.longitude, location.latitude)
-
-                binding.mapView.mapboxMap.setCamera(
-                    CameraOptions.Builder()
-                        .center(userLocation)
-                        .zoom(13.5)
-                        .build()
-                )
-
+                binding.mapView.mapboxMap.setCamera(CameraOptions.Builder().center(userLocation).zoom(13.0).build())
                 fusedLocationClient.removeLocationUpdates(this)
             }
         }
@@ -150,106 +125,94 @@ class SuggestedFragment : Fragment() {
         fusedLocationClient.requestLocationUpdates(request, callback, Looper.getMainLooper())
     }
 
-
-    private fun fetchSuggestions(query: String) {
+    private fun suggestPlaces(categories: List<String>) {
+        val query = categories.joinToString(" OR ")
         val location = userLocation ?: return
+
         suggestions.clear()
         pointAnnotationManager.deleteAll()
-        polylineAnnotationManager.deleteAll()
 
         CoroutineScope(Dispatchers.Main).launch {
             try {
                 val results = placeAutocomplete.suggestions(query = query, proximity = location).value ?: emptyList()
 
-                val validPlaces = results.mapNotNull { suggestion ->
-                    resolveCoordinates(suggestion)
-                }.sortedBy { it.distanceKm }
+                val resolved = results.mapNotNull {
+                    try {
+                        val coord = placeAutocomplete.select(it).value?.coordinate
+                        if (coord != null) {
+                            val dist = calculateDistance(location, coord)
+                            SuggestedPlaceItem(it.name, coord, dist)
+                        } else null
+                    } catch (e: Exception) {
+                        null
+                    }
+                }
 
-                suggestions.addAll(validPlaces.take(6))
+                val sorted = resolved.sortedBy { it.distanceKm }.take(6)
+                suggestions.addAll(sorted)
                 adapter.notifyDataSetChanged()
 
-                // Place POI markers
-                suggestions.forEach { place ->
+                sorted.forEach { place ->
                     place.coordinate?.let { coord ->
                         pointAnnotationManager.create(
                             PointAnnotationOptions()
                                 .withPoint(coord)
-                                .withIconImage("tour")
-                                .withIconSize(0.6)
+                                .withIconImage("route")
+                                .withIconSize(0.9)
                         )
                     }
                 }
+                drawLineBetweenSuggestions()
 
-                drawRouteBetweenSuggestions()
+                val allPoints = mutableListOf<Point>()
+                userLocation?.let { allPoints.add(it) }
+                allPoints.addAll(sorted.mapNotNull { it.coordinate })
+                zoomToIncludePoints(allPoints)
 
             } catch (e: Exception) {
-                Log.e("SuggestedDebug", "Error fetching suggestions: ${e.localizedMessage}")
-                Toast.makeText(requireContext(), "Error fetching suggestions.", Toast.LENGTH_SHORT).show()
+                Log.e("SuggestedDebug", "Error fetching: ${e.message}")
             }
         }
     }
 
-    private suspend fun resolveCoordinates(suggestion: PlaceAutocompleteSuggestion): SuggestedPlaceItem? {
-        return try {
-            val coord = placeAutocomplete.select(suggestion).value?.coordinate
-            if (coord == null) {
-                Log.d("SuggestedDebug", "Skipping ${suggestion.name} — no coordinate")
-                null
-            } else {
-                val distance = calculateDistance(userLocation!!, coord)
-                Log.d("SuggestedDebug", "Including ${suggestion.name} — $distance km")
-                SuggestedPlaceItem(suggestion.name, coord, distance)
-            }
-        } catch (e: Exception) {
-            Log.e("SuggestedDebug", "Error resolving suggestion: ${e.localizedMessage}")
-            null
-        }
+    private fun drawLineBetweenSuggestions() {
+        val points = suggestions.mapNotNull { it.coordinate }
+        if (points.size < 2) return
+
+        val line = PolylineAnnotationOptions()
+            .withPoints(points)
+            .withLineColor("#d900ff")
+            .withLineWidth(4.0)
+
+        polylineAnnotationManager.deleteAll()
+        polylineAnnotationManager.create(line)
     }
 
-    private fun drawRouteBetweenSuggestions() {
-        val coords = suggestions.mapNotNull { it.coordinate }
-        if (coords.size < 2 || userLocation == null) return
-
-        val directions = MapboxDirections.builder()
-            .accessToken(getString(R.string.mapbox_access_token))
-            .origin(userLocation!!)
-            .destination(coords.last())
-            .waypoints(coords.dropLast(1))
-            .overview(DirectionsCriteria.OVERVIEW_FULL)
-            .profile(DirectionsCriteria.PROFILE_WALKING)
-            .build()
-
-        directions.enqueueCall(object : Callback<DirectionsResponse> {
-            override fun onResponse(call: Call<DirectionsResponse>, response: Response<DirectionsResponse>) {
-                val route = response.body()?.routes()?.firstOrNull() ?: return
-                val geometry = route.geometry() ?: return
-
-                val line = LineString.fromPolyline(geometry, 6)
-                polylineAnnotationManager.create(
-                    PolylineAnnotationOptions()
-                        .withPoints(line.coordinates())
-                        .withLineColor("#d900ff")
-                        .withLineWidth(6.0)
-                )
-            }
-
-            override fun onFailure(call: Call<DirectionsResponse>, t: Throwable) {
-                Log.e("SuggestedDebug", "Route error: ${t.localizedMessage}")
-            }
-        })
-    }
 
     private fun calculateDistance(p1: Point, p2: Point): Double {
-        val lat1 = p1.latitude()
-        val lon1 = p1.longitude()
-        val lat2 = p2.latitude()
-        val lon2 = p2.longitude()
-
-        val dLat = Math.toRadians(lat2 - lat1)
-        val dLon = Math.toRadians(lon2 - lon1)
-        val a = sin(dLat / 2).pow(2.0) + cos(Math.toRadians(lat1)) * cos(Math.toRadians(lat2)) * sin(dLon / 2).pow(2.0)
-        return 6371 * 2 * atan2(sqrt(a), sqrt(1 - a)) // km
+        val dLat = Math.toRadians(p2.latitude() - p1.latitude())
+        val dLon = Math.toRadians(p2.longitude() - p1.longitude())
+        val a = sin(dLat / 2).pow(2.0) + cos(Math.toRadians(p1.latitude())) * cos(Math.toRadians(p2.latitude())) * sin(dLon / 2).pow(2.0)
+        return 6371 * 2 * atan2(sqrt(a), sqrt(1 - a))
     }
+
+    private fun zoomToIncludePoints(points: List<Point>) {
+        if (points.isEmpty()) return
+
+        val currentCamera = binding.mapView.mapboxMap.cameraState.toCameraOptions()
+
+        val cameraOptions = binding.mapView.mapboxMap.cameraForCoordinates(
+            coordinates = points,
+            camera = currentCamera,
+            coordinatesPadding = com.mapbox.maps.EdgeInsets(100.0, 100.0, 100.0, 100.0),
+            maxZoom = null,
+            offset = null
+        )
+
+        binding.mapView.mapboxMap.setCamera(cameraOptions)
+    }
+
+
 
     override fun onDestroyView() {
         super.onDestroyView()

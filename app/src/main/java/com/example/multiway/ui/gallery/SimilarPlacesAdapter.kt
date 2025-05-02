@@ -6,11 +6,10 @@ import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.example.multiway.R
-import com.example.multiway.ui.gallery.GalleryFragment.SimilarPlace
 
 
 class SimilarPlacesAdapter(
-    private var places: List<SimilarPlace>
+    private var places: List<SearchResultItem>
 ) : RecyclerView.Adapter<SimilarPlacesAdapter.ViewHolder>() {
 
     inner class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
@@ -30,5 +29,10 @@ class SimilarPlacesAdapter(
         val place = places[position]
         holder.placeName.text = place.name
         holder.distance.text = "${"%.1f".format(place.distanceKm)} km"
+    }
+
+    fun update(newPlaces: List<SearchResultItem>) {
+        places = newPlaces
+        notifyDataSetChanged()
     }
 }

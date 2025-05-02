@@ -10,6 +10,7 @@ import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.UserProfileChangeRequest
 import com.google.firebase.database.FirebaseDatabase
 
 class SignupFragment : Fragment() {
@@ -41,6 +42,7 @@ class SignupFragment : Fragment() {
             val name = nameField.text.toString().trim()
             val email = emailField.text.toString().trim()
             val password = passwordField.text.toString().trim()
+            val username = nameField.text.toString().trim()
 
             if (name.isNotEmpty() && email.isNotEmpty() && password.isNotEmpty()) {
                 // 🔐 Create user
@@ -55,6 +57,20 @@ class SignupFragment : Fragment() {
                                 "name" to name,
                                 "email" to email
                             )
+
+                            FirebaseAuth.getInstance().createUserWithEmailAndPassword(email, password)
+                                .addOnCompleteListener { task ->
+                                    if (task.isSuccessful) {
+                                        val user = FirebaseAuth.getInstance().currentUser
+                                        val profileUpdates = UserProfileChangeRequest.Builder()
+                                            .setDisplayName(username) // <-- Set the display name
+                                            .build()
+                                        user?.updateProfile(profileUpdates)?.addOnCompleteListener {
+                                            // Navigate to home or show success message
+                                        }
+                                    }
+                                }
+
 
                             // 💾 Save to database
                             userRef.setValue(userData)

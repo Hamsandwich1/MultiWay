@@ -15,40 +15,48 @@
 
     <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="203dp"
         android:layout_gravity="bottom"
-        android:fillViewport="true"
         android:layout_marginTop="250dp"
-        android:elevation="8dp">
+        android:elevation="8dp"
+        android:fillViewport="true">
 
         <LinearLayout
-            android:orientation="vertical"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:padding="16dp"
             android:background="@color/purple_200"
-            >
+            android:orientation="vertical"
+            android:padding="16dp">
 
-            <LinearLayout
-                android:orientation="horizontal"
+            <Spinner
+                android:id="@+id/routeType"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_margin="8dp"
+                android:entries="@array/route_types"
+                android:spinnerMode="dropdown" />
+
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
                 android:gravity="center_vertical"
-                android:layout_marginBottom="8dp">
+                android:orientation="horizontal">
 
                 <CheckBox
                     android:id="@+id/checkRestaurants"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Restaurants"
-                    android:layout_marginEnd="8dp"/>
+                    android:layout_marginEnd="8dp"
+                    android:text="Restaurants" />
 
                 <CheckBox
                     android:id="@+id/checkPubs"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Pubs"
-                    android:layout_marginEnd="8dp"/>
+                    android:layout_marginEnd="8dp"
+                    android:text="Pubs" />
 
                 <CheckBox
                     android:id="@+id/checkParks"
@@ -61,14 +69,15 @@
                 android:id="@+id/btnFetchSuggestions"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Suggest Places" />
+                android:text="Suggest Places"
+                android:background="@color/white"/>
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/recyclerView"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:nestedScrollingEnabled="false"
-                android:layout_marginTop="8dp"/>
+                android:layout_marginTop="8dp"
+                android:nestedScrollingEnabled="false" />
         </LinearLayout>
     </ScrollView>
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

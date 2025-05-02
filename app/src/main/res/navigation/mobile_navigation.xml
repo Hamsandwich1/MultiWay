@@ -66,13 +66,10 @@
             android:id="@+id/action_loginFragment_to_homeFragment"
             app:destination="@id/nav_home" />
 
+
     </fragment>
 
 
-    <fragment
-        android:id="@+id/loginFragment"
-        android:name="com.example.multiway.LoginFragment"
-        android:label="Login" />
 
 
     <fragment

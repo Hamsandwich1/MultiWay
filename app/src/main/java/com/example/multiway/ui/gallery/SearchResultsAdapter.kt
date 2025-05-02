@@ -8,7 +8,6 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.multiway.R
 
 // 🔥 Your custom data class
-data class SearchResultItem(val name: String, val distanceKm: Double)
 
 class SearchResultsAdapter(
     private val onItemClick: (SearchResultItem) -> Unit

@@ -26,6 +26,13 @@
         <item>Travellers</item>
     </string-array>
 
+    <string-array name="route_types">
+        <item>None</item>
+        <item>Romantic Walk</item>
+        <item>Family Day Out</item>
+        <item>Solo Exploring</item>
+        <item>Pub Crawl</item>
+    </string-array>
 
     <string-array name="category_list">
         <item>All</item>
