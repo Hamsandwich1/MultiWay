@@ -18,6 +18,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.MultiWay"
         tools:targetApi="31">
+
         <meta-data
             android:name="com.mapbox.ACCESS_TOKEN"
             android:value="pk.eyJ1Ijoiam10MTIzNCIsImEiOiJjbTJ6Nmt1a2EwN252MmtzZ3VudmhhNDZzIn0.aB3-nVFfgbqoZlMeWyXLQw" />
@@ -26,7 +27,8 @@
             android:exported="true"
             android:label="@string/app_name"
             android:windowSoftInputMode="adjustResize"
-            android:theme="@style/Theme.MultiWay.NoActionBar">
+            android:theme="@style/Theme.MultiWay.NoActionBar"
+            >
             <intent-filter>
 
                 <action android:name="android.intent.action.MAIN" />

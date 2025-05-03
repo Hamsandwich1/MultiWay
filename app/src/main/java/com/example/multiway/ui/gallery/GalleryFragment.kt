@@ -60,6 +60,7 @@ import com.mapbox.search.result.SearchResult
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 import com.google.gson.JsonParser
+import com.google.android.material.bottomsheet.BottomSheetBehavior
 
 
 
@@ -92,6 +93,7 @@ class GalleryFragment : Fragment() {
     private lateinit var searchEngine: com.mapbox.search.SearchEngine
     private lateinit var pointAnnotationManager: PointAnnotationManager
     private var currentRouteDestination: Point? = null
+    private var selectedTravelMode: String = DirectionsCriteria.PROFILE_WALKING
 
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
@@ -113,6 +115,7 @@ class GalleryFragment : Fragment() {
         setupSearchBox()
         setupCategorySpinner()
         setupRadiusSelector()
+        binding.directionsRecycler.layoutManager = LinearLayoutManager(requireContext())
 
 
         var isResultsVisible = true
@@ -135,6 +138,31 @@ class GalleryFragment : Fragment() {
                 searchNearbyPlaces() // ✅ Safe to call here now
             }
         }
+
+        binding.btnWalking.setOnClickListener {
+            selectedTravelMode = DirectionsCriteria.PROFILE_WALKING
+            currentRouteDestination?.let { fetchAndDrawRoute(it) }
+        }
+
+        binding.btnDriving.setOnClickListener {
+            selectedTravelMode = DirectionsCriteria.PROFILE_DRIVING
+            currentRouteDestination?.let { fetchAndDrawRoute(it) }
+        }
+
+        val bottomSheet = binding.placeInfoBottomSheet
+        val behavior = BottomSheetBehavior.from(bottomSheet)
+        behavior.peekHeight = 300
+        behavior.isHideable = false
+        behavior.state = BottomSheetBehavior.STATE_COLLAPSED
+
+        binding.btnToggleBottomSheetVisibility.setOnClickListener {
+            behavior.state = if (behavior.state == BottomSheetBehavior.STATE_EXPANDED) {
+                BottomSheetBehavior.STATE_COLLAPSED
+            } else {
+                BottomSheetBehavior.STATE_EXPANDED
+            }
+        }
+
 
         pointAnnotationManager.addClickListener { clickedAnnotation ->
             val data = clickedAnnotation.getData()
@@ -178,11 +206,9 @@ class GalleryFragment : Fragment() {
         }
 
 
-    //    binding.btnClearResults.setOnClickListener {
-    //        searchAnnotationManager.deleteAll()
-     //       searchResultsAdapter.update(emptyList())
-     //       binding.customResultsList.isVisible = false
-      //  }
+
+
+
     }
 
     private fun setupRecycler() {
@@ -346,7 +372,7 @@ class GalleryFragment : Fragment() {
                         seenCoords.add(key)
 
                         val category = detectCategory(result.name)
-
+                        if (category != selectedCategory) continue
                         val icon = when (category) {
                             "restaurant" -> "restaurant-icon"
                             "pub" -> "pub-icon"
@@ -609,35 +635,53 @@ class GalleryFragment : Fragment() {
 
 
     private fun fetchAndDrawRoute(destination: Point) {
-        val origin = userLocation ?: return
+        val origin = userLocation
+        if (origin == null) {
+            return
+        }
 
         val client = MapboxDirections.builder()
             .origin(origin)
             .destination(destination)
             .overview(DirectionsCriteria.OVERVIEW_FULL)
-            .profile(DirectionsCriteria.PROFILE_WALKING) // Or PROFILE_DRIVING
+            .profile(selectedTravelMode)
+            .steps(true) // ✅ Ensures step-by-step instructions are returned
             .accessToken(getString(R.string.mapbox_access_token))
             .build()
 
         client.enqueueCall(object : retrofit2.Callback<DirectionsResponse> {
             override fun onResponse(call: retrofit2.Call<DirectionsResponse>, response: retrofit2.Response<DirectionsResponse>) {
                 val route = response.body()?.routes()?.firstOrNull()
-                val steps = route?.legs()
+
+
+                route?.legs()?.forEachIndexed { i, leg ->
+                }
+
+                if (route == null || route.geometry() == null) {
+                    return
+                }
+
+                val steps = route.legs()
                     ?.flatMap { it.steps() ?: emptyList() }
                     ?.mapIndexed { index, step -> "${index + 1}. ${step.maneuver().instruction()}" }
                     ?: listOf("No steps available.")
 
-                binding.directionStepsText.text = steps.joinToString("\n")
+                requireActivity().runOnUiThread {
+                    val durationMinutes = (route.duration() / 60).roundToInt()
+                    val durationText = "Estimated time: $durationMinutes min"
+                    requireActivity().runOnUiThread {
+                        binding.directionSummary.text = durationText
+                        binding.directionSummary.visibility = View.VISIBLE
+                    }
+                    binding.directionsRecycler.adapter = DirectionsAdapter(steps)
+                    binding.directionsRecycler.isVisible = true
 
-                if (route == null || route.geometry() == null) {
-                    Log.e("RouteDraw", "No route found")
-                    return
+
                 }
 
                 val lineString = LineString.fromPolyline(route.geometry()!!, 6)
 
                 mapView.mapboxMap.getStyle { style ->
-                    // Add or update the route source
                     val routeSource = style.getSourceAs<GeoJsonSource>("route-source")
                     if (routeSource == null) {
                         style.addSource(
@@ -649,9 +693,6 @@ class GalleryFragment : Fragment() {
                         routeSource.geometry(lineString)
                     }
 
-                    binding.directionStepsText.text = steps.joinToString("\n")
-
-                    // Add or update the route layer
                     if (!style.styleLayerExists("route-layer")) {
                         style.addLayer(
                             LineLayer("route-layer", "route-source").apply {
@@ -664,9 +705,11 @@ class GalleryFragment : Fragment() {
             }
 
             override fun onFailure(call: retrofit2.Call<DirectionsResponse>, t: Throwable) {
+                Log.e("RouteDraw", "Directions API call failed: ${t.localizedMessage}")
             }
         })
     }
+
 
 
 

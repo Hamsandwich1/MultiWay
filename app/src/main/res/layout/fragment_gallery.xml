@@ -5,194 +5,209 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <!-- MapView background -->
     <com.mapbox.maps.MapView
         android:id="@+id/mapView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        app:mapbox_styleUri="mapbox://styles/mapbox/streets-v12" >
+        app:mapbox_styleUri="mapbox://styles/mapbox/streets-v12" />
 
-        <LinearLayout
-            android:id="@+id/searchContainer"
+    <LinearLayout
+        android:id="@+id/searchContainer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="16dp"
+        android:layout_marginTop="120dp"
+        android:background="#CCFFFFFF"
+        android:elevation="8dp"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <EditText
+            android:id="@+id/queryEditText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_margin="16dp"
-            android:layout_marginTop="120dp"
-            android:background="#CCFFFFFF"
-            android:elevation="8dp"
-            android:orientation="vertical"
-            android:padding="16dp">
+            android:background="@color/lavender"
+            android:hint="Search for places..."
+            android:padding="12dp" />
 
-            <EditText
-                android:id="@+id/queryEditText"
-                android:layout_width="match_parent"
+        <Spinner
+            android:id="@+id/categorySpinner"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:background="@color/black" />
+
+        <Spinner
+            android:id="@+id/partyTypeSpinner"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:background="@color/black" />
+    </LinearLayout>
+
+    <ImageButton
+        android:id="@+id/toggleMenuButton"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_gravity="top|end"
+        android:layout_marginTop="200dp"
+        android:background="@android:color/transparent"
+        android:src="@drawable/menuopen"
+        android:elevation="8dp" />
+
+    <ImageButton
+        android:id="@+id/radiusButton1"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_gravity="top|end"
+        android:layout_marginTop="250dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="Change radius"
+        android:elevation="8dp"
+        android:src="@drawable/distance2" />
+
+    <ImageButton
+        android:id="@+id/location"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_gravity="top|end"
+        android:layout_marginTop="300dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="User location"
+        android:elevation="8dp"
+        android:src="@drawable/userlocation" />
+
+    <ImageButton
+        android:id="@+id/btnToggleBottomSheetVisibility"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_gravity="top|end"
+        android:layout_marginTop="350dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="Toggle Info Panel"
+        android:src="@drawable/nav"
+        android:elevation="8dp" />
+
+    <com.mapbox.search.ui.view.SearchResultsView
+        android:id="@+id/searchResultsView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/customResultsList"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:background="#CCFFFFFF"
+        android:padding="8dp"
+        android:visibility="gone" />
+
+    <!-- Fixed bottom sheet section -->
+    <LinearLayout
+        android:id="@+id/placeInfoBottomSheet"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:orientation="vertical"
+        android:background="@color/cardview_dark_background"
+        android:elevation="16dp"
+        android:padding="16dp"
+        app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior">
+
+        <TextView
+            android:id="@+id/placeName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Place Name"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="@android:color/white"
+            android:paddingBottom="8dp" />
+
+        <TextView
+            android:id="@+id/placeAddress"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Address info"
+            android:textColor="@android:color/white"
+            android:textSize="14sp" />
+
+        <LinearLayout
+            android:id="@+id/topButtonRow"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:orientation="horizontal"
+            android:gravity="center_horizontal"
+            android:weightSum="4"
+            android:baselineAligned="false">
+
+            <Button
+                android:id="@+id/btnToggleResults"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:background="@color/lavender"
-                android:hint="Search for places..."
-                android:padding="12dp" />
+                android:layout_weight="1"
+                android:layout_marginEnd="4dp"
+                android:backgroundTint="#A020F0"
+                android:textColor="@android:color/white"
+                android:text="Results"
+                android:textSize="12sp"
+                android:singleLine="true"
+                android:ellipsize="end" />
 
-            <Spinner
-                android:id="@+id/categorySpinner"
-                android:layout_width="match_parent"
+            <Button
+                android:id="@+id/btnGetDirections"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:background="@color/black" />
+                android:layout_weight="1"
+                android:layout_marginEnd="4dp"
+                android:backgroundTint="#A020F0"
+                android:textColor="@android:color/white"
+                android:text="Route"
+                android:textSize="12sp"
+                android:singleLine="true"
+                android:ellipsize="end" />
 
-            <Spinner
-                android:id="@+id/partyTypeSpinner"
-                android:layout_width="match_parent"
+            <ImageButton
+                android:id="@+id/btnWalking"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp" />
+                android:layout_weight="1"
+                android:backgroundTint="#A020F0"
+                android:src="@drawable/walking"
+                android:contentDescription="Walk"
+                android:background="?attr/selectableItemBackgroundBorderless" />
 
+            <ImageButton
+                android:id="@+id/btnDriving"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:backgroundTint="#A020F0"
+                android:src="@drawable/car"
+                android:contentDescription="Drive"
+                android:background="?attr/selectableItemBackgroundBorderless" />
         </LinearLayout>
 
-        <ImageButton
-            android:id="@+id/toggleMenuButton"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:layout_gravity="top|end"
-            android:layout_marginTop="200dp"
-            android:background="@android:color/transparent"
-            android:src="@drawable/menuopen">
-
-        </ImageButton>
-
-        <ImageButton
-            android:id="@+id/radiusButton1"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:layout_gravity="top|end"
-            android:layout_marginTop="250dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="Change radius"
-            android:elevation="8dp"
-            android:src="@drawable/distance2" />
-
-
-        <ImageButton
-            android:id="@+id/location"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:layout_gravity="top|end"
-            android:layout_marginTop="300dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="Change radius"
-            android:elevation="8dp"
-            android:src="@drawable/userlocation" />
-
-        <FrameLayout
-            android:id="@+id/frameLayout"
+        <TextView
+            android:id="@+id/directionSummary"
             android:layout_width="match_parent"
-            android:layout_height="match_parent">
+            android:layout_height="wrap_content"
+            android:text="Estimated time:"
+            android:textColor="@android:color/white"
+            android:textStyle="bold"
+            android:textSize="14sp"
+            android:paddingTop="8dp"
+            android:visibility="gone" />
 
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/directionsRecycler"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:maxHeight="300dp"
+            android:layout_marginTop="4dp"
+            android:background="@android:color/transparent"
+            android:visibility="visible" />
 
-            <com.mapbox.search.ui.view.SearchResultsView
-                android:id="@+id/searchResultsView"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content" />
-
-            <!-- 📋 Recycler for Results -->
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/customResultsList"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_gravity="bottom"
-                android:background="#CCFFFFFF"
-                android:padding="8dp"
-                android:visibility="gone" />
-
-            <!-- 🧭 Navigation Buttons -->
-            <LinearLayout
-                android:id="@+id/navigationButtons"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="bottom|end"
-                android:layout_margin="16dp"
-                android:orientation="horizontal">
-
-                <Button
-                    android:id="@+id/btnToggleSearch"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
-                    android:text="Toggle Search" />
-
-                <Button
-                    android:id="@+id/btnCloseInfo"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="end"
-                    android:layout_marginTop="8dp"
-                    android:text="Close" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:id="@+id/placeInfoBottomSheet"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_gravity="bottom"
-                android:layout_marginTop="60dp"
-                android:background="@color/lavender"
-                android:elevation="16dp"
-                android:orientation="vertical"
-                android:padding="16dp">
-
-
-                <TextView
-                    android:id="@+id/placeName"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:paddingBottom="8dp"
-                    android:text="Place Name"
-                    android:textSize="18sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:id="@+id/placeAddress"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="Address info"
-                    android:textSize="14sp" />
-
-                <Button
-                    android:id="@+id/btnToggleResults"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:text="Hide Results" />
-
-                <Button
-                    android:id="@+id/btnGetDirections"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Get Directions"
-                    android:layout_marginTop="8dp"
-                    />
-
-                <TextView
-                    android:id="@+id/directionStepsText"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="Directions will appear here..."
-                    android:layout_marginTop="8dp"
-                    android:textColor="@android:color/white"
-                    />
-
-
-            </LinearLayout>
-
-            <Spinner
-                android:id="@+id/radiusSpinner"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:src="@drawable/distance2" />
-
-
-        </FrameLayout>
-
-
-    </com.mapbox.maps.MapView>
-
-
+    </LinearLayout>
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

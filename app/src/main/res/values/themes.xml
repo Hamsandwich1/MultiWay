@@ -20,6 +20,7 @@
     </style>
 
     <style name="Theme.MultiWay.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
+    <style name="Theme.YourAppName" parent="Theme.MaterialComponents.DayNight.DarkActionBar"/>
 
     <style name="Theme.MultiWay.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
 </resources>
