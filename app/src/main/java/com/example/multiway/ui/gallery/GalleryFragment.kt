@@ -1,23 +1,30 @@
 package com.example.multiway.ui.gallery
 
 import android.app.AlertDialog
+import android.content.Context
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Canvas
 import android.os.Bundle
-import android.telecom.Call
 import android.text.Editable
 import android.text.TextWatcher
 import android.util.Log
 import android.view.*
+import android.view.inputmethod.InputMethodManager
 import android.widget.*
+import androidx.annotation.DrawableRes
+import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+import androidx.core.graphics.drawable.toBitmap
 import androidx.core.view.isVisible
+import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.multiway.R
 import com.example.multiway.databinding.FragmentGalleryBinding
-import com.google.android.gms.common.api.Response
 import com.google.android.gms.location.*
 import com.mapbox.api.directions.v5.DirectionsCriteria
 import com.mapbox.api.directions.v5.MapboxDirections
@@ -27,16 +34,13 @@ import com.mapbox.maps.CameraOptions
 import com.mapbox.maps.Style
 import com.mapbox.maps.extension.style.layers.addLayer
 import com.mapbox.maps.extension.style.layers.generated.*
-import com.mapbox.maps.extension.style.layers.properties.generated.*
 import com.mapbox.maps.extension.style.sources.addSource
-import com.mapbox.maps.extension.style.sources.generated.*
 import com.mapbox.maps.extension.style.sources.getSource
 import com.mapbox.maps.extension.style.sources.getSourceAs
 import com.mapbox.maps.plugin.annotation.annotations
 import com.mapbox.maps.plugin.annotation.generated.*
 import com.mapbox.maps.plugin.locationcomponent.location
 import com.mapbox.search.autocomplete.PlaceAutocomplete
-import com.mapbox.search.autocomplete.PlaceAutocompleteSuggestion
 import com.mapbox.search.ui.adapter.autocomplete.PlaceAutocompleteUiAdapter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -46,33 +50,29 @@ import kotlin.math.*
 import com.mapbox.geojson.Polygon
 import com.mapbox.geojson.Point
 import com.mapbox.maps.extension.style.layers.generated.FillLayer
-import com.mapbox.maps.extension.style.layers.properties.generated.Visibility
-import com.mapbox.maps.extension.style.layers.addLayer
-import com.mapbox.maps.extension.style.layers.properties.generated.FillExtrusionTranslateAnchor
+import com.mapbox.search.autocomplete.PlaceAutocompleteSuggestion
+
 import com.mapbox.maps.extension.style.sources.generated.GeoJsonSource
 import com.mapbox.maps.extension.style.sources.generated.geoJsonSource
 import com.mapbox.maps.extension.style.layers.generated.fillLayer
-import com.mapbox.maps.extension.style.style
-import com.mapbox.maps.extension.style.sources.addSource
-import com.mapbox.search.SearchOptions
+import com.mapbox.maps.plugin.annotation.generated.PointAnnotationOptions
+
 import com.mapbox.maps.plugin.gestures.gestures
-import com.mapbox.search.result.SearchResult
-import androidx.lifecycle.lifecycleScope
-import kotlinx.coroutines.launch
+
 import com.google.gson.JsonParser
 import com.google.android.material.bottomsheet.BottomSheetBehavior
+import com.google.gson.JsonObject
 
 
-
-
-import com.mapbox.maps.plugin.annotation.generated.PointAnnotationOptions
 import org.json.JSONObject
 
 
 data class SearchResultItem(
     val name: String,
     val distanceKm: Double,
-    val point: Point
+    val point: Point,
+    val suggestion: PlaceAutocompleteSuggestion
+
 )
 
 class GalleryFragment : Fragment() {
@@ -104,15 +104,29 @@ class GalleryFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         mapView = binding.mapView
         pointAnnotationManager = mapView.annotations.createPointAnnotationManager()
-
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireActivity())
+        placeAutocomplete = PlaceAutocomplete.create()
 
-        placeAutocomplete = PlaceAutocomplete.create(locationProvider = null)
-        placeAutocompleteUiAdapter =
-            PlaceAutocompleteUiAdapter(binding.searchResultsView, placeAutocomplete)
+        placeAutocompleteUiAdapter = PlaceAutocompleteUiAdapter(
+            binding.searchResultsView,
+            placeAutocomplete
+        )
+
+
+
+
+        placeAutocompleteUiAdapter = PlaceAutocompleteUiAdapter(
+            binding.searchResultsView,
+            placeAutocomplete
+        )
+
 
         setupRecycler()
         setupSearchBox()
+        binding.btnSearch.setOnClickListener {
+            searchNearbyPlaces()
+        }
+
         setupCategorySpinner()
         setupRadiusSelector()
         binding.directionsRecycler.layoutManager = LinearLayoutManager(requireContext())
@@ -126,8 +140,7 @@ class GalleryFragment : Fragment() {
         }
 
 
-        // 👇 Fix is here
-        mapView.mapboxMap.loadStyle(Style.MAPBOX_STREETS) { style ->
+        mapView.mapboxMap.loadStyle(Style.DARK) { style ->
             loadIconsIntoStyle(style)
             searchAnnotationManager = mapView.annotations.createPointAnnotationManager()
 
@@ -148,6 +161,8 @@ class GalleryFragment : Fragment() {
             selectedTravelMode = DirectionsCriteria.PROFILE_DRIVING
             currentRouteDestination?.let { fetchAndDrawRoute(it) }
         }
+
+
 
         val bottomSheet = binding.placeInfoBottomSheet
         val behavior = BottomSheetBehavior.from(bottomSheet)
@@ -206,29 +221,109 @@ class GalleryFragment : Fragment() {
         }
 
 
-
-
-
     }
+
 
     private fun setupRecycler() {
         searchResultsAdapter = SearchResultsAdapter { item ->
+            // Hide UI
+            binding.customResultsList.isVisible = false
+            binding.searchContainer.isVisible = false
+
+            val imm = requireContext().getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+            imm.hideSoftInputFromWindow(binding.queryEditText.windowToken, 0)
+
+            // Zoom + show marker
+            drawSearchResultMarker(item.point, item.name)
+
+            // Draw route
             fetchAndDrawRoute(item.point)
 
+            // Update place info UI
+            val category = detectCategory(item.name)
+            binding.placeName.text = item.name
+            binding.placeAddress.text = "Category: ${category.replaceFirstChar { it.uppercaseChar() }}"
+            binding.btnGetDirections.isVisible = true
         }
+
         binding.customResultsList.layoutManager = LinearLayoutManager(requireContext())
         binding.customResultsList.adapter = searchResultsAdapter
     }
 
+
+
     private fun setupSearchBox() {
-        binding.queryEditText.addTextChangedListener(object : TextWatcher {
-            override fun afterTextChanged(s: Editable?) {}
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                searchNearbyPlaces()
+        binding.queryEditText.doAfterTextChanged { text ->
+            val query = text.toString().trim()
+            if (query.isNotEmpty()) {
+                performSuggestionSearch(query)
+            }
+        }
+
+
+
+
+    placeAutocompleteUiAdapter.addSearchListener(object : PlaceAutocompleteUiAdapter.SearchListener {
+            override fun onSuggestionsShown(suggestions: List<PlaceAutocompleteSuggestion>) {
+            }
+
+            override fun onSuggestionSelected(suggestion: PlaceAutocompleteSuggestion) {
+                lifecycleScope.launch {
+                    val result = placeAutocomplete.select(suggestion).value ?: return@launch
+                    val coord = result.coordinate ?: return@launch
+
+                    val name = result.name
+                    val category = detectCategory(name)
+
+                    currentRouteDestination = coord
+
+                    // Clear previous markers
+                    searchAnnotationManager.deleteAll()
+
+                    // Add marker
+                    val jsonData = JSONObject().apply {
+                        put("name", name)
+                        put("category", category)
+                    }
+
+                    binding.customResultsList.isVisible = false
+                    binding.searchContainer.isVisible = false
+
+                    val imm = requireContext().getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+                    imm.hideSoftInputFromWindow(binding.queryEditText.windowToken, 0)
+
+
+                    searchAnnotationManager.create(
+                        PointAnnotationOptions()
+                            .withPoint(coord)
+                            .withIconImage("tour-icon")
+                            .withIconSize(0.3)
+                            .withData(JsonParser.parseString(jsonData.toString()))
+                    )
+
+                    // Draw route and update UI
+                    fetchAndDrawRoute(coord)
+                    binding.placeName.text = name
+                    binding.placeAddress.text = "Category: ${category.replaceFirstChar { it.uppercaseChar() }}"
+                    binding.btnGetDirections.isVisible = true
+                }
+            }
+
+
+
+            override fun onPopulateQueryClick(suggestion: PlaceAutocompleteSuggestion) {
+                // Optional: fill the search box with suggestion text if needed
+                binding.queryEditText.setText(suggestion.name)
+            }
+
+            override fun onError(error: Exception) {
+                Log.e("PlaceAutocomplete", "Search error: ${error.localizedMessage}")
             }
         })
+
     }
+
+
 
     private fun setupCategorySpinner() {
         val categories = listOf("Restaurants", "Pubs", "Parks", "Hotels", "Shops", "Tourist Attractions")
@@ -246,28 +341,31 @@ class GalleryFragment : Fragment() {
                     "Tourist Attractions" -> "tourist_attraction"
                     else -> "restaurant"
                 }
-                searchNearbyPlaces()
+
+                if (::searchAnnotationManager.isInitialized) {
+                    searchNearbyPlaces()
+                } else {
+                    Log.w("CategorySpinner", "searchAnnotationManager not ready yet")
+                }
             }
 
             override fun onNothingSelected(p0: AdapterView<*>?) {}
         }
     }
 
-    private fun showPOIDetails(name: String, location: Point) {
-        AlertDialog.Builder(requireContext())
-            .setTitle(name)
-            .setMessage("Latitude: ${location.latitude()}\nLongitude: ${location.longitude()}")
-            .setPositiveButton("OK", null)
-            .show()
-    }
-
 
     private fun searchNearbyPlaces() {
         lifecycleScope.launch {
-            val location = userLocation ?: return@launch
+            // ✅ Use userLocation or fallback to map center
+            val location: Point = userLocation ?: mapView.mapboxMap.cameraState.center
+            val query = binding.queryEditText.text.toString().trim()
+            val results = mutableListOf<SearchResultItem>()
 
-            val keywords = if (binding.queryEditText.text.isNotBlank()) {
-                listOf(binding.queryEditText.text.toString())
+            Log.d("SearchInput", "Searching for: '$query' at $location")
+
+            // ✅ Build keyword list
+            val keywords = if (query.isNotBlank()) {
+                listOf(query)
             } else {
                 when (selectedCategory) {
                     "pub" -> listOf("pub", "bar", "brewery", "tavern")
@@ -280,7 +378,6 @@ class GalleryFragment : Fragment() {
                 }
             }
 
-            val results = mutableListOf<SearchResultItem>()
             val seenCoords = mutableSetOf<String>()
             searchAnnotationManager.deleteAll()
 
@@ -288,22 +385,98 @@ class GalleryFragment : Fragment() {
 
             for (keyword in keywords) {
                 for (proximity in proximityPoints) {
-                    val suggestions = withContext(Dispatchers.IO) {
-                        placeAutocomplete.suggestions(
-                            query = keyword,
-                            proximity = proximity
-                        ).value ?: emptyList()
+
+                    // ✅ Main thread — required by Mapbox SearchEngine
+                    val suggestions = withContext(Dispatchers.Main) {
+                        placeAutocomplete.suggestions(query = keyword, proximity = proximity).value ?: emptyList()
                     }
 
+                    Log.d("SearchDebug", "Got ${suggestions.size} suggestions for '$keyword' near $proximity")
+
+                    withContext(Dispatchers.Main) {
+                        for (suggestion in suggestions) {
+                            try {
+                                val result = placeAutocomplete.select(suggestion).value ?: continue
+
+                                val coord = result.coordinate ?: continue
+                                val lat = coord.latitude()
+                                val lon = coord.longitude()
+                                val key = "$lat,$lon"
+
+                                if (seenCoords.contains(key)) continue
+
+                                val distance = calculateDistance(location, coord)
+                                if (distance > radiusKm) continue
+
+                                seenCoords.add(key)
+
+                                val icon = when (detectCategory(result.name)) {
+                                    "restaurant" -> "restaurant-icon"
+                                    "pub" -> "pub-icon"
+                                    "park" -> "park-icon"
+                                    "hotel" -> "hotel-icon"
+                                    "shop" -> "shop-icon"
+                                    "tourist_attraction" -> "tour-icon"
+                                    else -> "restaurant-icon"
+                                }
+
+                                searchAnnotationManager.create(
+                                    PointAnnotationOptions()
+                                        .withPoint(coord)
+                                        .withIconImage(icon)
+                                        .withIconSize(0.3)
+                                )
+
+                                results.add(SearchResultItem(result.name, distance, coord, suggestion))
+                            } catch (e: Exception) {
+                                Log.e("POIMarker", "Error resolving suggestion: ${e.message}")
+                            }
+                        }
+                    }
+                }
+            }
+
+            searchResultsAdapter.update(results)
+            binding.customResultsList.isVisible = results.isNotEmpty()
+
+            if (results.isEmpty()) {
+                Toast.makeText(requireContext(), "No results found for '$query'", Toast.LENGTH_SHORT).show()
+            } else {
+                Log.d("SearchResults", "Showing ${results.size} results.")
+            }
+        }
+    }
+
+
+
+
+    private fun fetchAndShowPOIs(center: Point) {
+        lifecycleScope.launch {
+            val keywords = listOf("restaurant", "pub", "bar", "hotel", "tourist", "shop", "park")
+
+            val results = mutableListOf<SearchResultItem>()
+            val seenCoords = mutableSetOf<String>()
+            pointAnnotationManager.deleteAll()
+
+            for (keyword in keywords) {
+                val suggestions = withContext(Dispatchers.IO) {
+                    placeAutocomplete.suggestions(
+                        query = keyword,
+                        proximity = center
+                    ).value ?: emptyList()
+                }
+
+                withContext(Dispatchers.Main) {
                     for (suggestion in suggestions) {
                         try {
-                            val result = placeAutocomplete.select(suggestion).value
-                            val coord = result?.coordinate ?: continue
+                            val result = placeAutocomplete.select(suggestion).value ?: continue
+                            val coord = result.coordinate ?: continue
                             val lat = coord.latitude()
                             val lon = coord.longitude()
                             val key = "$lat,$lon"
 
                             if (seenCoords.contains(key)) continue
+                            val location: Point = userLocation ?: mapView.mapboxMap.cameraState.center
 
                             val distance = calculateDistance(location, coord)
                             if (distance > radiusKm) continue
@@ -327,82 +500,13 @@ class GalleryFragment : Fragment() {
                                     .withIconSize(0.3)
                             )
 
-                            results.add(SearchResultItem(result.name, distance, coord))
+                            results.add(SearchResultItem(result.name, distance, coord, suggestion))
                         } catch (e: Exception) {
                             Log.e("POIMarker", "Error resolving suggestion: ${e.message}")
                         }
                     }
                 }
-            }
 
-            searchResultsAdapter.update(results)
-            binding.customResultsList.isVisible = results.isNotEmpty()
-        }
-    }
-
-
-    private fun fetchAndShowPOIs(center: Point) {
-        lifecycleScope.launch {
-            val keywords = listOf("restaurant", "pub", "bar", "hotel", "tourist", "shop", "park")
-
-            val results = mutableListOf<SearchResultItem>()
-            val seenCoords = mutableSetOf<String>()
-            pointAnnotationManager.deleteAll()
-
-            for (keyword in keywords) {
-                val suggestions = withContext(Dispatchers.IO) {
-                    placeAutocomplete.suggestions(
-                        query = keyword,
-                        proximity = center
-                    ).value ?: emptyList()
-                }
-
-                for (suggestion in suggestions) {
-                    try {
-                        val result = placeAutocomplete.select(suggestion).value
-                        val coord = result?.coordinate ?: continue
-                        val lat = coord.latitude()
-                        val lon = coord.longitude()
-                        val key = "$lat,$lon"
-                        if (seenCoords.contains(key)) continue
-
-                        val distance = calculateDistance(center, coord)
-                        if (distance > 5.0) continue
-
-                        seenCoords.add(key)
-
-                        val category = detectCategory(result.name)
-                        if (category != selectedCategory) continue
-                        val icon = when (category) {
-                            "restaurant" -> "restaurant-icon"
-                            "pub" -> "pub-icon"
-                            "park" -> "park-icon"
-                            "hotel" -> "hotel-icon"
-                            "shop" -> "shop-icon"
-                            "tourist_attraction" -> "tour-icon"
-                            else -> "restaurant-icon"
-                        }
-
-                        val jsonObject = JSONObject().apply {
-                            put("name", result.name)
-                            put("category", category)
-                        }
-
-                        pointAnnotationManager.create(
-                            PointAnnotationOptions()
-                                .withPoint(coord)
-                                .withIconImage(icon)  // ✅ icon is defined above
-                                .withIconSize(0.3)
-                                .withData(JsonParser.parseString(jsonObject.toString()))
-                        )
-
-
-
-                        results.add(SearchResultItem(result.name, distance, coord))
-                    } catch (e: Exception) {
-                        Log.e("POI Fetch", "Error resolving suggestion: ${e.message}")
-                    }
-                }
             }
 
 
@@ -411,17 +515,6 @@ class GalleryFragment : Fragment() {
     }
 
 
-
-
-    private val proximityPoints = listOf(
-        Point.fromLngLat(-6.2603, 53.3498),   // Center (Dublin)
-        Point.fromLngLat(-6.18497, 53.3498),
-        Point.fromLngLat(-6.22264, 53.38874),
-        Point.fromLngLat(-6.29796, 53.38874),
-        Point.fromLngLat(-6.33563, 53.3498),
-        Point.fromLngLat(-6.29796, 53.31086),
-        Point.fromLngLat(-6.22264, 53.31086)
-    )
 
     private val predefinedProximityPoints = listOf(
         Point.fromLngLat(-6.18497, 53.3498),
@@ -634,63 +727,73 @@ class GalleryFragment : Fragment() {
     }
 
 
-    private fun fetchAndDrawRoute(destination: Point) {
-        val origin = userLocation
-        if (origin == null) {
+
+
+    private fun drawSearchResultMarker(point: Point, name: String) {
+        val iconBitmap = bitmapFromDrawableRes(R.drawable.search)
+        if (iconBitmap == null) {
+            Log.e("MapIcon", "Icon bitmap was null")
             return
         }
 
+        val jsonData = JsonObject().apply {
+            addProperty("name", name)
+        }
+
+        searchAnnotationManager.deleteAll()
+        searchAnnotationManager.create(
+            PointAnnotationOptions()
+                .withPoint(point)
+                .withIconImage(iconBitmap)
+                .withIconSize(1.3)
+                .withData(jsonData)
+        )
+    }
+
+
+
+    private fun fetchAndDrawRoute(destination: Point) {
+        val origin = userLocation ?: return  // 🔄 use a clearly named variable
+
         val client = MapboxDirections.builder()
-            .origin(origin)
+            .origin(origin)  // 🔄 changed to originPoint
             .destination(destination)
             .overview(DirectionsCriteria.OVERVIEW_FULL)
             .profile(selectedTravelMode)
-            .steps(true) // ✅ Ensures step-by-step instructions are returned
+            .steps(true)
             .accessToken(getString(R.string.mapbox_access_token))
             .build()
 
         client.enqueueCall(object : retrofit2.Callback<DirectionsResponse> {
-            override fun onResponse(call: retrofit2.Call<DirectionsResponse>, response: retrofit2.Response<DirectionsResponse>) {
-                val route = response.body()?.routes()?.firstOrNull()
+            override fun onResponse(
+                call: retrofit2.Call<DirectionsResponse>,
+                response: retrofit2.Response<DirectionsResponse>
+            ) {
+                val route = response.body()?.routes()?.firstOrNull() ?: return
+                val lineString = LineString.fromPolyline(route.geometry()!!, 6)
 
-
-                route?.legs()?.forEachIndexed { i, leg ->
-                }
-
-                if (route == null || route.geometry() == null) {
-                    return
-                }
-
+                // Update UI with steps
                 val steps = route.legs()
                     ?.flatMap { it.steps() ?: emptyList() }
                     ?.mapIndexed { index, step -> "${index + 1}. ${step.maneuver().instruction()}" }
                     ?: listOf("No steps available.")
 
                 requireActivity().runOnUiThread {
-                    val durationMinutes = (route.duration() / 60).roundToInt()
-                    val durationText = "Estimated time: $durationMinutes min"
-                    requireActivity().runOnUiThread {
-                        binding.directionSummary.text = durationText
-                        binding.directionSummary.visibility = View.VISIBLE
-                    }
+                    binding.directionSummary.text = "Estimated time: ${(route.duration() / 60).roundToInt()} min"
+                    binding.directionSummary.visibility = View.VISIBLE
                     binding.directionsRecycler.adapter = DirectionsAdapter(steps)
                     binding.directionsRecycler.isVisible = true
-
-
                 }
 
-                val lineString = LineString.fromPolyline(route.geometry()!!, 6)
-
+                // Draw route on map
                 mapView.mapboxMap.getStyle { style ->
-                    val routeSource = style.getSourceAs<GeoJsonSource>("route-source")
-                    if (routeSource == null) {
-                        style.addSource(
-                            geoJsonSource("route-source") {
-                                geometry(lineString)
-                            }
-                        )
+                    val source = style.getSourceAs<GeoJsonSource>("route-source")
+                    if (source == null) {
+                        style.addSource(geoJsonSource("route-source") {
+                            geometry(lineString)
+                        })
                     } else {
-                        routeSource.geometry(lineString)
+                        source.geometry(lineString)
                     }
 
                     if (!style.styleLayerExists("route-layer")) {
@@ -710,7 +813,128 @@ class GalleryFragment : Fragment() {
         })
     }
 
+    private fun retrieveSearchResult(suggestion: PlaceAutocompleteSuggestion) {
+        lifecycleScope.launch {
+            try {
+                val result = placeAutocomplete.select(suggestion).value ?: return@launch
+                val coord = result.coordinate ?: return@launch
+                val name = result.name
+                val category = detectCategory(name)
+                val point = Point.fromLngLat(coord.longitude(), coord.latitude())
 
+
+
+                currentRouteDestination = coord
+
+                binding.searchContainer.isVisible = false  // 👈 Hide the top search bar
+                val bottomSheet = BottomSheetBehavior.from(binding.placeInfoBottomSheet)
+                bottomSheet.state = BottomSheetBehavior.STATE_COLLAPSED
+
+                // Clear existing markers
+                searchAnnotationManager.deleteAll()
+
+
+                val iconId = "search-icon"
+                val bitmap = BitmapFactory.decodeResource(resources, R.drawable.search)
+                mapView.mapboxMap.getStyle { style ->
+                    try {
+                        style.addImage(iconId, bitmap)
+                    } catch (_: RuntimeException) {
+                        // Ignore duplicate
+                    }
+
+                    // Add marker for searched POI
+                    val jsonData = JSONObject().apply {
+                        put("name", name)
+                        put("category", category)
+                    }
+
+                    searchAnnotationManager.create(
+                        PointAnnotationOptions()
+                            .withPoint(coord)
+                            .withIconImage(iconId)
+                            .withIconSize(0.3)
+                            .withData(JsonParser.parseString(jsonData.toString()))
+                    )
+                }
+
+                // Update UI
+                fetchAndDrawRoute(coord)
+                binding.placeName.text = name
+                binding.placeAddress.text = "Category: ${category.replaceFirstChar { it.uppercaseChar() }}"
+                binding.btnGetDirections.isVisible = true
+
+                // 🧭 Zoom out to fit both user location and result
+                val origin = userLocation ?: return@launch
+                val bounds = listOf(origin, coord)
+
+                val southwest = Point.fromLngLat(
+                    bounds.minOf { it.longitude() },
+                    bounds.minOf { it.latitude() }
+                )
+                val northeast = Point.fromLngLat(
+                    bounds.maxOf { it.longitude() },
+                    bounds.maxOf { it.latitude() }
+                )
+
+                val cameraBounds = CameraOptions.Builder()
+                    .center(Point.fromLngLat(
+                        (southwest.longitude() + northeast.longitude()) / 2,
+                        (southwest.latitude() + northeast.latitude()) / 2
+                    ))
+                    .zoom(10.5) // or calculate appropriate zoom based on distance
+                    .build()
+
+                mapView.mapboxMap.setCamera(cameraBounds)
+
+                // Optionally: hide results list
+                binding.customResultsList.isVisible = false
+                val imm = requireContext().getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
+                imm.hideSoftInputFromWindow(binding.queryEditText.windowToken, 0)
+
+                binding.searchContainer.isVisible = false
+                binding.customResultsList.isVisible = false
+
+            } catch (e: Exception) {
+                Toast.makeText(requireContext(), "Error selecting: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun performSuggestionSearch(query: String) {
+        val location = userLocation ?: mapView.mapboxMap.cameraState.center
+
+        lifecycleScope.launch(Dispatchers.Main) {
+            try {
+                val suggestions = placeAutocomplete.suggestions(query = query, proximity = location).value ?: return@launch
+
+                val items = suggestions.mapNotNull { suggestion ->
+                    val result = placeAutocomplete.select(suggestion).value ?: return@mapNotNull null
+                    val coord = result.coordinate ?: return@mapNotNull null
+                    val distance = calculateDistance(location, coord)
+                    SearchResultItem(result.name, distance, coord, suggestion)
+                }
+
+                searchResultsAdapter.update(items)
+                binding.customResultsList.isVisible = items.isNotEmpty()
+
+            } catch (e: Exception) {
+            }
+        }
+    }
+
+    private fun bitmapFromDrawableRes(@DrawableRes resourceId: Int): Bitmap? {
+        val drawable = ContextCompat.getDrawable(requireContext(), resourceId) ?: return null
+        val bitmap = Bitmap.createBitmap(
+            drawable.intrinsicWidth,
+            drawable.intrinsicHeight,
+            Bitmap.Config.ARGB_8888
+        )
+        val canvas = Canvas(bitmap)
+        drawable.setBounds(0, 0, canvas.width, canvas.height)
+        drawable.draw(canvas)
+        return bitmap
+    }
 
 
     override fun onDestroyView() {

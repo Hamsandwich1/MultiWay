@@ -58,7 +58,7 @@ class SuggestedFragment : Fragment() {
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireActivity())
         placeAutocomplete = PlaceAutocomplete.create()
 
-        binding.mapView.mapboxMap.loadStyle(Style.MAPBOX_STREETS) { style ->
+        binding.mapView.mapboxMap.loadStyle(Style.TRAFFIC_NIGHT) { style ->
             pointAnnotationManager = binding.mapView.annotations.createPointAnnotationManager()
             val bitmap = BitmapFactory.decodeResource(resources, R.drawable.route)
             style.addImage("route", bitmap)

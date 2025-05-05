@@ -59,7 +59,7 @@ class EventsFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         binding.mapView.mapboxMap.loadStyle(
-            style(Style.MAPBOX_STREETS) { } // ✅ This empty block satisfies the required parameter
+            style(Style.DARK) { } // ✅ This empty block satisfies the required parameter
         ) {
             // ✅ This block runs after the style is fully loaded
             circleAnnotationManager = binding.mapView.annotations.createPolygonAnnotationManager()

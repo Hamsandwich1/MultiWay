@@ -22,13 +22,32 @@
         android:orientation="vertical"
         android:padding="16dp">
 
-        <EditText
-            android:id="@+id/queryEditText"
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@color/lavender"
-            android:hint="Search for places..."
-            android:padding="12dp" />
+            android:orientation="horizontal">
+
+            <EditText
+                android:id="@+id/queryEditText"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:background="@color/lavender"
+                android:hint="Search for places..."
+                android:padding="12dp" />
+
+            <ImageButton
+                android:id="@+id/btnSearch"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@android:drawable/ic_menu_search"
+                android:contentDescription="Search"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:padding="12dp" />
+
+
+        </LinearLayout>
+
 
         <Spinner
             android:id="@+id/categorySpinner"
@@ -43,6 +62,15 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:background="@color/black" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/customResultsList"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
+            android:background="#CCFFFFFF"
+            android:padding="8dp"
+            android:visibility="gone" />
     </LinearLayout>
 
     <ImageButton
@@ -93,14 +121,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content" />
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/customResultsList"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom"
-        android:background="#CCFFFFFF"
-        android:padding="8dp"
-        android:visibility="gone" />
+
 
     <!-- Fixed bottom sheet section -->
     <LinearLayout
