@@ -1,9 +1,11 @@
 package com.example.multiway
 
 import android.os.Bundle
+import android.text.method.ScrollingMovementMethod
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.CheckBox
 import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
@@ -27,6 +29,19 @@ class SignupFragment : Fragment() {
         loginRedirectText.setOnClickListener {
             findNavController().navigate(R.id.action_signupFragment_to_loginFragment)
         }
+        val policyToggle = view.findViewById<TextView>(R.id.privacy_policy_toggle)
+        val policyText = view.findViewById<TextView>(R.id.privacypolicytext)
+        policyText.movementMethod = ScrollingMovementMethod()
+
+        policyToggle.setOnClickListener {
+            if (policyText.visibility == View.GONE) {
+                policyText.visibility = View.VISIBLE
+                policyToggle.text = "Hide Privacy Policy"
+            } else {
+                policyText.visibility = View.GONE
+                policyToggle.text = "Read Privacy Policy"
+            }
+        }
 
 
         // 🔐 Initialize Firebase Auth
@@ -44,7 +59,13 @@ class SignupFragment : Fragment() {
             val password = passwordField.text.toString().trim()
             val username = nameField.text.toString().trim()
 
-            if (name.isNotEmpty() && email.isNotEmpty() && password.isNotEmpty()) {
+            val privacyCheckbox = view.findViewById<CheckBox>(R.id.privacy_checkbox)
+
+
+
+            if (name.isNotEmpty() && email.isNotEmpty() && password.isNotEmpty() && privacyCheckbox.isChecked) {
+
+
                 // 🔐 Create user
                 auth.createUserWithEmailAndPassword(email, password)
                     .addOnCompleteListener { task ->
@@ -57,6 +78,7 @@ class SignupFragment : Fragment() {
                                 "name" to name,
                                 "email" to email
                             )
+
 
                             FirebaseAuth.getInstance().createUserWithEmailAndPassword(email, password)
                                 .addOnCompleteListener { task ->
@@ -85,9 +107,13 @@ class SignupFragment : Fragment() {
                             Toast.makeText(context, "Signup failed: ${task.exception?.message}", Toast.LENGTH_LONG).show()
                         }
                     }
+            } else if (!privacyCheckbox.isChecked) {
+                Toast.makeText(context, "Please agree to the Privacy Policy", Toast.LENGTH_SHORT).show()
+
             } else {
                 Toast.makeText(context, "Please fill in all fields", Toast.LENGTH_SHORT).show()
             }
+
         }
 
         return view

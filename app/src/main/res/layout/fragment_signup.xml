@@ -13,14 +13,14 @@
 
     <androidx.cardview.widget.CardView
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="700dp"
         android:layout_margin="30dp"
         app:cardCornerRadius="30dp"
         app:cardElevation="20dp">
 
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="715dp"
             android:layout_gravity="center_horizontal"
             android:background="@color/white"
             android:orientation="vertical"
@@ -45,9 +45,9 @@
                 android:background="@drawable/lavender_border"
                 android:drawableLeft="@drawable/baseline_boy_24"
                 android:hint="Name"
-                android:textColorHint="@color/black"
                 android:padding="8dp"
-                android:textColor="@color/black" />
+                android:textColor="@color/black"
+                android:textColorHint="@color/black" />
 
             <EditText
                 android:id="@+id/signup_email"
@@ -58,8 +58,8 @@
                 android:drawableLeft="@drawable/baseline_email_24"
                 android:hint="Email"
                 android:padding="8dp"
-                android:textColorHint="@color/black"
-                android:textColor="@color/black"/>
+                android:textColor="@color/black"
+                android:textColorHint="@color/black" />
 
             <EditText
                 android:id="@+id/signup_username"
@@ -70,8 +70,8 @@
                 android:drawableLeft="@drawable/baseline_alternate_email_24"
                 android:hint="Username"
                 android:padding="8dp"
-                android:textColorHint="@color/black"
-                android:textColor="@color/black"/>
+                android:textColor="@color/black"
+                android:textColorHint="@color/black" />
 
             <EditText
                 android:id="@+id/signup_password"
@@ -83,8 +83,37 @@
                 android:hint="Password"
                 android:inputType="textPassword"
                 android:padding="8dp"
-                android:textColorHint="@color/black"
-                android:textColor="@color/black"/>
+                android:textColor="@color/black"
+                android:textColorHint="@color/black" />
+
+            <CheckBox
+                android:id="@+id/privacy_checkbox"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:text="I agree to the Privacy Policy"
+                android:textColor="@color/black" />
+
+            <TextView
+                android:id="@+id/privacy_policy_toggle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="Read Privacy Policy"
+                android:textColor="@color/lavender"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/privacypolicytext"
+                android:layout_width="match_parent"
+                android:layout_height="150dp"
+                android:scrollbars="vertical"
+                android:text="GDPR Privacy Policy:\n\nWe collect your email, name, and password only for account creation and use in the app.\n\nYour data is stored securely and is never shared with third parties.\n\nYou can request deletion of your data at any time by contacting us.\n\nBy signing up, you consent to the use of your data in accordance with this policy."
+                android:padding="8dp"
+                android:visibility="gone"
+                android:background="@android:color/white"
+                android:textColor="@android:color/black"
+                android:textSize="14sp"/>
 
 
             <Button
