@@ -2,6 +2,7 @@
 //MainActivity - The brain of the project
 
 package com.example.multiway
+import android.app.Application
 import android.os.Bundle
 import android.view.Menu
 import com.google.firebase.FirebaseApp
@@ -16,6 +17,7 @@ import androidx.navigation.ui.setupWithNavController
 import com.example.multiway.databinding.ActivityMainBinding
 import com.google.android.material.navigation.NavigationView
 import com.google.firebase.database.FirebaseDatabase
+
 
 class MainActivity : AppCompatActivity() {
 
@@ -49,7 +51,6 @@ class MainActivity : AppCompatActivity() {
 
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
-        // Adds items to the menu
         menuInflater.inflate(R.menu.main, menu)
         return true
     }
@@ -59,3 +60,4 @@ class MainActivity : AppCompatActivity() {
         return navController.navigateUp(appBarConfiguration) || super.onSupportNavigateUp()
     }
 }
+

@@ -88,13 +88,11 @@ class SignupFragment : Fragment() {
                                             .setDisplayName(username) // <-- Set the display name
                                             .build()
                                         user?.updateProfile(profileUpdates)?.addOnCompleteListener {
-                                            // Navigate to home or show success message
                                         }
                                     }
                                 }
 
 
-                            // 💾 Save to database
                             userRef.setValue(userData)
                                 .addOnSuccessListener {
                                     Toast.makeText(context, "Signup successful!", Toast.LENGTH_SHORT).show()

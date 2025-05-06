@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.coordinatorlayout.widget.CoordinatorLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:mapbox="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/tools">
 
     <com.mapbox.maps.MapView
         android:id="@+id/mapView"
@@ -11,7 +11,24 @@
         android:layout_height="match_parent"
         mapbox:mapbox_cameraTargetLat="53.3498"
         mapbox:mapbox_cameraTargetLng="-6.2603"
-        mapbox:mapbox_cameraZoom="13" />
+        mapbox:mapbox_cameraZoom="13" >
+
+
+    </com.mapbox.maps.MapView>
+
+    <TextView
+        android:id="@+id/pubCrawlHeader"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="🍻 This feature is over 18's only and please drink and travel responsibly!"
+        android:textStyle="bold"
+        android:visibility="gone"
+        android:gravity="center"
+        android:padding="8dp"
+        android:textSize="16sp"
+        android:layout_marginTop="60dp"/>
+
+
 
     <ScrollView
         android:layout_width="match_parent"
@@ -28,6 +45,13 @@
             android:orientation="vertical"
             android:padding="16dp">
 
+            <Button
+                android:id="@+id/radiusButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Select Radius" />
+
+
             <Spinner
                 android:id="@+id/routeType"
                 android:layout_width="match_parent"
@@ -37,33 +61,43 @@
                 android:spinnerMode="dropdown" />
 
 
-            <LinearLayout
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/routeChipGroup"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="8dp"
-                android:gravity="center_vertical"
-                android:orientation="horizontal">
+                app:singleSelection="true"
+                android:layout_marginTop="12dp"
+                android:layout_marginBottom="8dp">
 
-                <CheckBox
-                    android:id="@+id/checkRestaurants"
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipPubCrawl"
+                    style="@style/Widget.MaterialComponents.Chip.Choice"
+                    android:text="Pub Crawl"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"/>
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipRomantic"
+                    style="@style/Widget.MaterialComponents.Chip.Choice"
+                    android:text="Romantic Walk"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"/>
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipFamily"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginEnd="8dp"
-                    android:text="Restaurants" />
+                    style="@style/Widget.MaterialComponents.Chip.Choice"
+                    android:text="Family Day Out" />
 
-                <CheckBox
-                    android:id="@+id/checkPubs"
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipSolo"
+                    style="@style/Widget.MaterialComponents.Chip.Choice"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginEnd="8dp"
-                    android:text="Pubs" />
+                    android:text="Solo Exploring" />
+            </com.google.android.material.chip.ChipGroup>
 
-                <CheckBox
-                    android:id="@+id/checkParks"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Parks" />
-            </LinearLayout>
 
             <Button
                 android:id="@+id/btnFetchSuggestions"
@@ -71,6 +105,8 @@
                 android:layout_height="wrap_content"
                 android:text="Suggest Places"
                 android:background="@color/white"/>
+
+
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/recyclerView"
