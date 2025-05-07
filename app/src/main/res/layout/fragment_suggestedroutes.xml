@@ -44,13 +44,46 @@
             android:background="@color/purple_200"
             android:orientation="vertical"
             android:padding="16dp">
-
             <Button
-                android:id="@+id/radiusButton"
-                android:layout_width="wrap_content"
+                android:id="@+id/btnFetchSuggestions"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Select Radius" />
+                android:text="Suggest Places"
+                android:background="@color/white"/>
 
+            <GridLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:columnCount="2"
+                android:alignmentMode="alignMargins"
+                android:padding="8dp"
+                android:columnOrderPreserved="true">
+
+                <Button
+                    android:id="@+id/radiusButton"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="8dp"
+                    android:layout_columnWeight="1"
+                    android:text="Select Radius" />
+
+                <Button
+                    android:id="@+id/moodButton"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="8dp"
+                    android:layout_columnWeight="1"
+                    android:text="Select Mood" />
+
+                <Button
+                    android:id="@+id/toggleChipsButton"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="8dp"
+                    android:layout_columnWeight="1"
+                    android:layout_columnSpan="2"
+                    android:text="Toggle Route Types" />
+            </GridLayout>
 
 
 
@@ -60,7 +93,8 @@
                 android:layout_height="wrap_content"
                 app:singleSelection="true"
                 android:layout_marginTop="12dp"
-                android:layout_marginBottom="8dp">
+                android:layout_marginBottom="8dp"
+                android:visibility="gone">
 
                 <com.google.android.material.chip.Chip
                     android:id="@+id/chipPubCrawl"
@@ -92,12 +126,6 @@
             </com.google.android.material.chip.ChipGroup>
 
 
-            <Button
-                android:id="@+id/btnFetchSuggestions"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Suggest Places"
-                android:background="@color/white"/>
 
 
 

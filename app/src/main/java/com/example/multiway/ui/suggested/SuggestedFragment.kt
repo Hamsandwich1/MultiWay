@@ -9,6 +9,7 @@ import android.os.Bundle
 import android.os.Looper
 import android.util.Log
 import android.view.*
+import android.widget.AdapterView
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -80,6 +81,14 @@ class SuggestedFragment : Fragment() {
         "Pub Crawl" to listOf("traditional pub", "craft beer bar", "rooftop bar", "pub", "bar","cocktail bar", "wine bar", "beer bar" )
     )
 
+    private val moodCategoryMap = mapOf(
+        "Chill Afternoon" to listOf("coffee shop", "scenic park", "bookstore"),
+        "Party Night" to listOf("nightclub", "bar", "live music"),
+        "Solo Exploring" to listOf("museum", "library", "landmark"),
+        "Romantic Evening" to listOf("romantic restaurant", "rooftop bar", "sunset viewpoint")
+    )
+
+
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         _binding = FragmentSuggestedroutesBinding.inflate(inflater, container, false)
         return binding.root
@@ -95,6 +104,14 @@ class SuggestedFragment : Fragment() {
 
             style.addImage("poi_notpicked", BitmapFactory.decodeResource(resources, R.drawable.route))
             style.addImage("poi_picked", BitmapFactory.decodeResource(resources, R.drawable.routepicked))
+
+            val chipGroup = binding.routeChipGroup
+            val toggleChipsButton = binding.toggleChipsButton
+
+            toggleChipsButton.setOnClickListener {
+                chipGroup.visibility = if (chipGroup.visibility == View.VISIBLE) View.GONE else View.VISIBLE
+            }
+
 
 
 
@@ -142,7 +159,24 @@ class SuggestedFragment : Fragment() {
 
 
 
+        val moodOptions = resources.getStringArray(R.array.moods)
+        binding.moodButton.setOnClickListener {
+            AlertDialog.Builder(requireContext())
+                .setTitle("Select Mood")
+                .setItems(moodOptions) { _, which ->
+                    val selectedMood = moodOptions[which]
+                    binding.moodButton.text = selectedMood
+                    val keywords = moodCategoryMap[selectedMood] ?: emptyList()
+                    currentKeywords = keywords
+                    suggestPlaces(keywords)
+                }
+                .show()
+        }
 
+        binding.toggleChipsButton.setOnClickListener {
+            val isVisible = binding.routeChipGroup.visibility == View.VISIBLE
+            binding.routeChipGroup.visibility = if (isVisible) View.GONE else View.VISIBLE
+        }
 
 
 
@@ -156,13 +190,16 @@ class SuggestedFragment : Fragment() {
             }
             selected?.let {
                 if (it == "Pub Crawl") {
+                    binding.pubCrawlHeader.visibility = View.VISIBLE
                     Toast.makeText(requireContext(), "Please drink and travel responsibly!", Toast.LENGTH_LONG).show()
+                } else {
+                    binding.pubCrawlHeader.visibility = View.GONE
                 }
+
                 currentKeywords = routeTypeCategories[it] ?: emptyList()
                 suggestPlaces(currentKeywords)
             }
         }
-
         setupRadiusSelector()
     }
 

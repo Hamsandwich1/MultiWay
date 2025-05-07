@@ -90,7 +90,6 @@ class GalleryFragment : Fragment() {
     private var userLocation: Point? = null
     private val radiusKm = 5.0
     private var selectedCategory = "restaurant"
-    private lateinit var searchEngine: com.mapbox.search.SearchEngine
     private lateinit var pointAnnotationManager: PointAnnotationManager
     private var currentRouteDestination: Point? = null
     private var selectedTravelMode: String = DirectionsCriteria.PROFILE_WALKING
@@ -263,7 +262,7 @@ class GalleryFragment : Fragment() {
 
 
 
-    placeAutocompleteUiAdapter.addSearchListener(object : PlaceAutocompleteUiAdapter.SearchListener {
+        placeAutocompleteUiAdapter.addSearchListener(object : PlaceAutocompleteUiAdapter.SearchListener {
             override fun onSuggestionsShown(suggestions: List<PlaceAutocompleteSuggestion>) {
             }
 
@@ -361,7 +360,6 @@ class GalleryFragment : Fragment() {
             val query = binding.queryEditText.text.toString().trim()
             val results = mutableListOf<SearchResultItem>()
 
-            Log.d("SearchInput", "Searching for: '$query' at $location")
 
             // ✅ Build keyword list
             val keywords = if (query.isNotBlank()) {
@@ -391,11 +389,10 @@ class GalleryFragment : Fragment() {
                         placeAutocomplete.suggestions(query = keyword, proximity = proximity).value ?: emptyList()
                     }
 
-                    Log.d("SearchDebug", "Got ${suggestions.size} suggestions for '$keyword' near $proximity")
 
                     withContext(Dispatchers.Main) {
                         for (suggestion in suggestions) {
-                            try {
+
                                 val result = placeAutocomplete.select(suggestion).value ?: continue
 
                                 val coord = result.coordinate ?: continue
@@ -420,18 +417,29 @@ class GalleryFragment : Fragment() {
                                     else -> "restaurant-icon"
                                 }
 
-                                searchAnnotationManager.create(
-                                    PointAnnotationOptions()
-                                        .withPoint(coord)
-                                        .withIconImage(icon)
-                                        .withIconSize(0.3)
+                            val jsonData = JsonObject().apply {
+                                addProperty("name", result.name)
+                                addProperty("category", detectCategory(result.name))
+                            }
+
+                            searchAnnotationManager.create(
+                                PointAnnotationOptions()
+                                    .withPoint(coord)
+                                    .withIconImage(icon)
+                                    .withIconSize(0.3)
+                                    .withData(jsonData)
+                            )
+
+                            results.add(
+                                    SearchResultItem(
+                                        result.name,
+                                        distance,
+                                        coord,
+                                        suggestion
+                                    )
                                 )
 
-                                results.add(SearchResultItem(result.name, distance, coord, suggestion))
-                            } catch (e: Exception) {
-                                Log.e("POIMarker", "Error resolving suggestion: ${e.message}")
                             }
-                        }
                     }
                 }
             }
@@ -456,7 +464,7 @@ class GalleryFragment : Fragment() {
 
             val results = mutableListOf<SearchResultItem>()
             val seenCoords = mutableSetOf<String>()
-            pointAnnotationManager.deleteAll()
+            searchAnnotationManager.deleteAll() // ✅ use consistent manager
 
             for (keyword in keywords) {
                 val suggestions = withContext(Dispatchers.IO) {
@@ -476,14 +484,13 @@ class GalleryFragment : Fragment() {
                             val key = "$lat,$lon"
 
                             if (seenCoords.contains(key)) continue
-                            val location: Point = userLocation ?: mapView.mapboxMap.cameraState.center
-
-                            val distance = calculateDistance(location, coord)
-                            if (distance > radiusKm) continue
+                            val distance = calculateDistance(center, coord)
+                            if (distance > selectedRadiusKm) continue // ✅ use selected radius
 
                             seenCoords.add(key)
 
-                            val icon = when (detectCategory(result.name)) {
+                            val category = detectCategory(result.name)
+                            val icon = when (category) {
                                 "restaurant" -> "restaurant-icon"
                                 "pub" -> "pub-icon"
                                 "park" -> "park-icon"
@@ -493,24 +500,48 @@ class GalleryFragment : Fragment() {
                                 else -> "restaurant-icon"
                             }
 
+                            val jsonData = JsonObject().apply {
+                                addProperty("name", result.name)
+                                addProperty("category", category)
+                            }
+
                             searchAnnotationManager.create(
                                 PointAnnotationOptions()
                                     .withPoint(coord)
                                     .withIconImage(icon)
                                     .withIconSize(0.3)
+                                    .withData(jsonData)
                             )
 
                             results.add(SearchResultItem(result.name, distance, coord, suggestion))
+
                         } catch (e: Exception) {
                             Log.e("POIMarker", "Error resolving suggestion: ${e.message}")
                         }
                     }
                 }
+            }
 
+            searchAnnotationManager.addClickListener { clickedAnnotation ->
+                val json = clickedAnnotation.getData()?.asJsonObject
+                val name = json?.get("name")?.asString ?: "Unknown"
+                val category = json?.get("category")?.asString ?: "Unknown"
+                currentRouteDestination = clickedAnnotation.point
+
+                binding.placeName.text = name
+                binding.placeAddress.text = "Category: ${category.replaceFirstChar { it.uppercaseChar() }}"
+                binding.btnGetDirections.isVisible = true
+
+                true
             }
 
 
+            searchResultsAdapter.update(results)
+            binding.customResultsList.isVisible = results.isNotEmpty()
 
+            if (results.isEmpty()) {
+                Toast.makeText(requireContext(), "No places found in this area", Toast.LENGTH_SHORT).show()
+            }
         }
     }
 

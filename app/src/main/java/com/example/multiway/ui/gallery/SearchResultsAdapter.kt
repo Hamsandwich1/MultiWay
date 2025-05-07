@@ -29,8 +29,6 @@ class SearchResultsAdapter(
             onItemClick(item)  // 🔥 Make sure this matches the lambda type
         }
     }
-    fun getFirstSuggestion(): SearchResultItem? = suggestions.firstOrNull()
-
 
     override fun getItemCount(): Int = suggestions.size
 

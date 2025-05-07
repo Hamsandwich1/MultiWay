@@ -26,6 +26,14 @@
         <item>Travellers</item>
     </string-array>
 
+    <string-array name="moods">
+        <item>Chill Afternoon</item>
+        <item>Party Night</item>
+        <item>Solo Exploring</item>
+        <item>Romantic Evening</item>
+    </string-array>
+
+
     <string-array name="route_types">
         <item>None</item>
         <item>Romantic Walk</item>
