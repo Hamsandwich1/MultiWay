@@ -24,6 +24,7 @@ import com.mapbox.api.directions.v5.MapboxDirections
 import com.mapbox.api.directions.v5.models.DirectionsResponse
 import com.mapbox.core.constants.Constants.PRECISION_6
 import com.mapbox.geojson.Feature
+import com.mapbox.geojson.FeatureCollection
 import com.mapbox.geojson.LineString
 import com.mapbox.geojson.Point
 import com.mapbox.maps.CameraOptions
@@ -41,7 +42,9 @@ import com.mapbox.maps.plugin.LocationPuck2D
 import com.mapbox.maps.plugin.annotation.annotations
 import com.mapbox.maps.plugin.annotation.generated.PointAnnotationManager
 import com.mapbox.maps.plugin.annotation.generated.PointAnnotationOptions
+import com.mapbox.maps.plugin.annotation.generated.PolylineAnnotationOptions
 import com.mapbox.maps.plugin.annotation.generated.createPointAnnotationManager
+import com.mapbox.maps.plugin.annotation.generated.createPolylineAnnotationManager
 import com.mapbox.search.autocomplete.PlaceAutocomplete
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -86,33 +89,60 @@ class SuggestedFragment : Fragment() {
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireActivity())
         placeAutocomplete = PlaceAutocomplete.create()
 
+
         binding.mapView.mapboxMap.loadStyle(Style.DARK) { style ->
             pointAnnotationManager = binding.mapView.annotations.createPointAnnotationManager()
-            style.addImage("route", BitmapFactory.decodeResource(resources, R.drawable.route))
-            enableUserLocation()
+
+            style.addImage("poi_notpicked", BitmapFactory.decodeResource(resources, R.drawable.route))
+            style.addImage("poi_picked", BitmapFactory.decodeResource(resources, R.drawable.routepicked))
+
+
 
             binding.mapView.location.updateSettings {
                 enabled = true
                 pulsingEnabled = true
-
-
             }
+
+            adapter = SuggestedPlaceAdapter(suggestions) { place ->
+                place.isSelected = !place.isSelected
+                adapter.notifyDataSetChanged()
+
+                // Update map icon
+                pointAnnotationManager.annotations.find { it.point == place.coordinate }?.let { annotation ->
+                    annotation.iconImage = if (place.isSelected) "poi_picked" else "poi_notpicked"
+                    pointAnnotationManager.update(annotation)
+                }
+
+                drawRouteToSelectedPOIs()
+            }
+
+            binding.recyclerView.layoutManager = LinearLayoutManager(requireContext())
+            binding.recyclerView.adapter = adapter
+
+            pointAnnotationManager.addClickListener { annotation ->
+                val clickedPoint = annotation.point
+                val matched = suggestions.find { it.coordinate == clickedPoint }
+                matched?.let {
+                    it.isSelected = !it.isSelected
+                    adapter.notifyDataSetChanged()
+
+                    // Change icon dynamically
+                    annotation.iconImage = if (it.isSelected) "poi_picked" else "poi_notpicked"
+                    pointAnnotationManager.update(annotation)
+
+                    drawRouteToSelectedPOIs()
+                }
+                true
+            }
+
+
             enableUserLocation()
-
-
         }
 
-        adapter = SuggestedPlaceAdapter(suggestions) {
-            Toast.makeText(requireContext(), "Clicked: ${it.name}", Toast.LENGTH_SHORT).show()
-        }
 
-        binding.recyclerView.layoutManager = LinearLayoutManager(requireContext())
-        binding.recyclerView.adapter = adapter
 
-        adapter = SuggestedPlaceAdapter(suggestions) {
-            Toast.makeText(requireContext(), "Clicked: ${it.name}", Toast.LENGTH_SHORT).show()
-            drawRouteThroughAllPois(suggestions.mapNotNull { item -> item.coordinate })
-        }
+
+
 
 
 
@@ -176,12 +206,12 @@ class SuggestedFragment : Fragment() {
                 pointAnnotationManager.create(
                     PointAnnotationOptions()
                         .withPoint(it.coordinate!!)
-                        .withIconImage("route")
+                        .withIconImage(if (it.isSelected) "poi_picked" else "poi_notpicked")
                         .withIconSize(0.9)
                 )
+
             }
 
-            drawRouteThroughAllPois(sorted.mapNotNull { it.coordinate })
 
 
 
@@ -236,12 +266,31 @@ class SuggestedFragment : Fragment() {
     }
 
 
-    private fun drawRouteThroughAllPois(poiList: List<Point>) {
-        val origin = userLocation ?: return
-        if (poiList.isEmpty()) return
 
-        val destination = poiList.last()
-        val waypoints = poiList.dropLast(1)
+    private fun calculateDistance(p1: Point, p2: Point): Double {
+        val R = 6371.0
+        val dLat = Math.toRadians(p2.latitude() - p1.latitude())
+        val dLon = Math.toRadians(p2.longitude() - p1.longitude())
+        val a = sin(dLat / 2).pow(2.0) + cos(Math.toRadians(p1.latitude())) * cos(Math.toRadians(p2.latitude())) * sin(dLon / 2).pow(2.0)
+        return R * 2 * atan2(sqrt(a), sqrt(1 - a))
+    }
+
+    private fun drawRouteToSelectedPOIs() {
+        val origin = userLocation ?: return
+        val selected = suggestions.filter { it.isSelected }.mapNotNull { it.coordinate }
+        if (selected.isEmpty()) return
+
+        if (selected.isEmpty()) {
+            binding.mapView.mapboxMap.style?.apply {
+                removeStyleLayer("route-layer")
+                removeStyleSource("route-source")
+            }
+            return
+        }
+
+
+        val destination = selected.last()
+        val waypoints = selected.dropLast(1)
 
         val client = MapboxDirections.builder()
             .origin(origin)
@@ -256,48 +305,32 @@ class SuggestedFragment : Fragment() {
 
         client.enqueueCall(object : retrofit2.Callback<DirectionsResponse> {
             override fun onResponse(call: Call<DirectionsResponse>, response: retrofit2.Response<DirectionsResponse>) {
-                val route = response.body()?.routes()?.firstOrNull() ?: return
-                val geometry = route.geometry() ?: return
+                val geometry = response.body()?.routes()?.firstOrNull()?.geometry() ?: return
                 val lineString = LineString.fromPolyline(geometry, PRECISION_6)
 
-                binding.mapView.mapboxMap.getStyle()?.apply {
+                binding.mapView.mapboxMap.style?.apply {
                     removeStyleLayer("route-layer")
                     removeStyleSource("route-source")
 
-                    addSource(
-                        geoJsonSource("route-source") {
-                            geometry(lineString)
-                        }
-                    )
+                    addSource(geoJsonSource("route-source") {
+                        geometry(lineString)
+                    })
 
-                    addLayer(
-                        lineLayer("route-layer", "route-source") {
-                            lineColor("#ee0979")
-                            lineWidth(5.0)
-                            lineJoin(LineJoin.ROUND)
-                        }
-                    )
+                    addLayer(lineLayer("route-layer", "route-source") {
+                        lineColor("#00AEEF")
+                        lineWidth(5.0)
+                        lineJoin(LineJoin.ROUND)
+                    })
                 }
             }
 
             override fun onFailure(call: Call<DirectionsResponse>, t: Throwable) {
-                Log.e("RouteError", "Failed to get route: ${t.message}")
+                Log.e("RouteError", "Failed to draw selected route: ${t.message}")
             }
         })
     }
 
 
-
-
-
-
-    private fun calculateDistance(p1: Point, p2: Point): Double {
-        val R = 6371.0
-        val dLat = Math.toRadians(p2.latitude() - p1.latitude())
-        val dLon = Math.toRadians(p2.longitude() - p1.longitude())
-        val a = sin(dLat / 2).pow(2.0) + cos(Math.toRadians(p1.latitude())) * cos(Math.toRadians(p2.latitude())) * sin(dLon / 2).pow(2.0)
-        return R * 2 * atan2(sqrt(a), sqrt(1 - a))
-    }
 
     override fun onDestroyView() {
         super.onDestroyView()

@@ -52,13 +52,6 @@
                 android:text="Select Radius" />
 
 
-            <Spinner
-                android:id="@+id/routeType"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_margin="8dp"
-                android:entries="@array/route_types"
-                android:spinnerMode="dropdown" />
 
 
             <com.google.android.material.chip.ChipGroup
