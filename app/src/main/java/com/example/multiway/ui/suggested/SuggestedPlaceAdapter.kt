@@ -1,3 +1,6 @@
+//Joey Teahan - 20520316
+//SuggestedPlaceAdapter class, this class is used to display and interact with my suggested places class
+
 package com.example.multiway.ui.suggested
 
 import android.graphics.Color
@@ -30,11 +33,6 @@ class SuggestedPlaceAdapter(
             )
         }
 
-    }
-
-    private fun onItemClicked(place: SuggestedPlaceItem) {
-        place.isSelected = !place.isSelected
-        onClick(place)
     }
 
 

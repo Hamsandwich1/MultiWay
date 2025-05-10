@@ -8,7 +8,7 @@
 
 
     <com.google.android.material.button.MaterialButton
-        android:id="@+id/btnFeature4"
+        android:id="@+id/routesbtn"
         android:layout_width="0dp"
         android:layout_height="70dp"
         android:layout_marginStart="8dp"
@@ -17,11 +17,11 @@
         android:text="Routes "
         app:iconGravity="textStart"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@id/btnFeature3"
-        app:layout_constraintTop_toBottomOf="@id/btnFeature2" />
+        app:layout_constraintStart_toEndOf="@id/historybtn"
+        app:layout_constraintTop_toBottomOf="@id/eventsbtn" />
 
     <com.google.android.material.button.MaterialButton
-        android:id="@+id/btnFeature3"
+        android:id="@+id/historybtn"
         android:layout_width="0dp"
         android:layout_height="70dp"
         android:layout_marginStart="16dp"
@@ -29,9 +29,9 @@
         android:layout_marginEnd="8dp"
         android:text="Your History"
         app:iconGravity="textStart"
-        app:layout_constraintEnd_toStartOf="@id/btnFeature4"
+        app:layout_constraintEnd_toStartOf="@id/routesbtn"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/btnFeature1" />
+        app:layout_constraintTop_toBottomOf="@id/gallerybtn" />
 
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/searchContainer"
@@ -52,7 +52,7 @@
     </com.google.android.material.textfield.TextInputLayout>
 
     <com.google.android.material.button.MaterialButton
-        android:id="@+id/btnFeature2"
+        android:id="@+id/eventsbtn"
         android:layout_width="0dp"
         android:layout_height="70dp"
         android:layout_marginStart="8dp"
@@ -61,11 +61,11 @@
         android:text="Events "
         app:iconGravity="textStart"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@id/btnFeature1"
+        app:layout_constraintStart_toEndOf="@id/gallerybtn"
         app:layout_constraintTop_toBottomOf="@id/searchContainer" />
 
     <com.google.android.material.button.MaterialButton
-        android:id="@+id/btnFeature1"
+        android:id="@+id/gallerybtn"
         android:layout_width="0dp"
         android:layout_height="70dp"
         android:layout_marginStart="16dp"
@@ -73,7 +73,7 @@
         android:layout_marginEnd="8dp"
         android:text="Explore"
         app:iconGravity="textStart"
-        app:layout_constraintEnd_toStartOf="@id/btnFeature2"
+        app:layout_constraintEnd_toStartOf="@id/eventsbtn"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/searchContainer" />
 

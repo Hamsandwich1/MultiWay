@@ -71,6 +71,7 @@ dependencies {
     implementation(libs.google.play.services.location)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+    androidTestImplementation(libs.androidx.test.rules)
 
 
 

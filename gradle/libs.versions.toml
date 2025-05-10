@@ -24,6 +24,7 @@ mapbox-autocomplete = "2.8.0"
 googlePlayServicesLocation = "21.3.0"
 mapbox-directions = "5.8.0"
 firebase-auth = "22.3.0"
+androidxTestRules = "1.5.0"
 
 
 [libraries]
@@ -49,7 +50,7 @@ google-play-services-location = { module = "com.google.android.gms:play-services
 mapbox-directions = { module = "com.mapbox.mapboxsdk:mapbox-sdk-services", version.ref = "mapbox-directions" }
 firebase-auth = { module = "com.google.firebase:firebase-auth", version.ref = "firebase-auth" }
 firebase-database = { module = "com.google.firebase:firebase-database", version.ref = "firebase-database" }
-
+androidx-test-rules = { group = "androidx.test", name = "rules", version.ref = "androidxTestRules" }
 
 
 [plugins]

@@ -7,7 +7,7 @@
         <item
             android:id="@+id/nav_home"
             android:icon="@android:drawable/ic_menu_mapmode"
-            android:title="@string/menu_home" />
+            android:title="Home" />
         <item
             android:id="@+id/nav_gallery"
             android:icon="@android:drawable/btn_radio"

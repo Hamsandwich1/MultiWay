@@ -114,7 +114,6 @@ class SuggestedFragment : Fragment() {
 
 
 
-
             binding.mapView.location.updateSettings {
                 enabled = true
                 pulsingEnabled = true
@@ -189,12 +188,14 @@ class SuggestedFragment : Fragment() {
                 else -> null
             }
             selected?.let {
+
                 if (it == "Pub Crawl") {
-                    binding.pubCrawlHeader.visibility = View.VISIBLE
                     Toast.makeText(requireContext(), "Please drink and travel responsibly!", Toast.LENGTH_LONG).show()
+                    binding.pubCrawlHeader.visibility = View.VISIBLE
                 } else {
                     binding.pubCrawlHeader.visibility = View.GONE
                 }
+
 
                 currentKeywords = routeTypeCategories[it] ?: emptyList()
                 suggestPlaces(currentKeywords)
@@ -354,7 +355,7 @@ class SuggestedFragment : Fragment() {
                     })
 
                     addLayer(lineLayer("route-layer", "route-source") {
-                        lineColor("#00AEEF")
+                        lineColor("#d900ff")
                         lineWidth(5.0)
                         lineJoin(LineJoin.ROUND)
                     })

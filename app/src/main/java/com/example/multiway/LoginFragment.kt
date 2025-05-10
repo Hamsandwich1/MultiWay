@@ -10,6 +10,7 @@ import android.widget.*
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.BuildConfig
 import com.google.firebase.database.FirebaseDatabase
 
 class LoginFragment : Fragment() {

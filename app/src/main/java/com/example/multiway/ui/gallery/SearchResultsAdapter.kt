@@ -1,3 +1,5 @@
+//Joey Teahan - 20520316
+//SearchResultsAdapter class, this class is used to display search results
 package com.example.multiway.ui.gallery
 
 import android.view.LayoutInflater
@@ -7,13 +9,12 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.example.multiway.R
 
-// 🔥 Your custom data class
-
+//The SearchResultsAdapter class
 class SearchResultsAdapter(
     private val onItemClick: (SearchResultItem) -> Unit
 ) : RecyclerView.Adapter<SearchResultsAdapter.SuggestionViewHolder>() {
 
-    // ✅ Correct type (flat list)
+    //Sets up the suggestion list
     private var suggestions: List<SearchResultItem> = emptyList()
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): SuggestionViewHolder {
@@ -26,19 +27,19 @@ class SearchResultsAdapter(
         val item = suggestions[position]
         holder.bind(item)
         holder.itemView.setOnClickListener {
-            onItemClick(item)  // 🔥 Make sure this matches the lambda type
+            onItemClick(item)
         }
     }
 
     override fun getItemCount(): Int = suggestions.size
 
-    // ✅ Update method
+    // Updates the suggestions list
     fun update(newSuggestions: List<SearchResultItem>) {
         suggestions = newSuggestions
         notifyDataSetChanged()
     }
 
-    // ✅ Use SearchResultItem instead of PlaceAutocompleteSuggestion
+    // I used the SearchResultItem instead of PlaceAutocompleteSuggestion
     class SuggestionViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
 
         fun bind(item: SearchResultItem) {
