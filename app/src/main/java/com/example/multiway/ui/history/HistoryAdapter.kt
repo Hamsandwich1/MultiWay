@@ -1,3 +1,5 @@
+//Joey Teahan - 20520316
+//HistoryAdapter class - This class helps the History Fragment class
 package com.example.multiway.ui.history
 
 import android.view.LayoutInflater
@@ -11,6 +13,7 @@ import com.example.multiway.R
 class HistoryAdapter(private val items: List<HistoryItem>) :
     RecyclerView.Adapter<HistoryAdapter.ViewHolder>() {
 
+        //Setting up the ViewHolder class
     inner class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val title: TextView = view.findViewById(R.id.history_title)
         val subtitle: TextView = view.findViewById(R.id.history_subtitle)

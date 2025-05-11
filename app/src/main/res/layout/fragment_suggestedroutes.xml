@@ -20,13 +20,14 @@
         android:id="@+id/pubCrawlHeader"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="🍻 This feature is over 18's only and please drink and travel responsibly!"
+        android:text="🍻 This feature is over 18's only, please drink and travel responsibly!"
         android:textStyle="bold"
         android:visibility="gone"
         android:gravity="center"
         android:padding="8dp"
         android:textSize="16sp"
-        android:layout_marginTop="60dp"/>
+        android:layout_marginTop="60dp"
+        android:textColor="@color/black"/>
 
 
 

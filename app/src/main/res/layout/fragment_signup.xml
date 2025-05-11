@@ -108,7 +108,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="150dp"
                 android:scrollbars="vertical"
-                android:text="GDPR Privacy Policy:\n\nWe collect your email, name, and password only for account creation and use in the app.\n\nYour data is stored securely and is never shared with third parties.\n\nYou can request deletion of your data at any time by contacting us.\n\nBy signing up, you consent to the use of your data in accordance with this policy."
+                android:text="MultiWay collects your email, name, and password only for account creation and use in the app.\n\nWe assure you that your data is stored securely and will not be shared with any third parties.\n\nYour data will be deteted at your request by contacting us.\n\nBy signing up to MultiWay, you consent to the use of your data in accordance with this policy."
                 android:padding="8dp"
                 android:visibility="gone"
                 android:background="@android:color/white"

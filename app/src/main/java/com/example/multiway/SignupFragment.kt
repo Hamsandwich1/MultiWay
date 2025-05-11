@@ -1,3 +1,5 @@
+// Joey Teahan - 20520316
+//SignupFragment - Creates and sets up the sign up section
 package com.example.multiway
 
 import android.os.Bundle
@@ -44,7 +46,7 @@ class SignupFragment : Fragment() {
         }
 
 
-        // 🔐 Initialize Firebase Auth
+        // Sets up Firebase Authentication
         auth = FirebaseAuth.getInstance()
 
         // 🧾 Get form fields
@@ -52,63 +54,57 @@ class SignupFragment : Fragment() {
         val emailField = view.findViewById<EditText>(R.id.signup_email)
         val passwordField = view.findViewById<EditText>(R.id.signup_password)
         val signupButton = view.findViewById<View>(R.id.signup_button)
-
         signupButton.setOnClickListener {
             val name = nameField.text.toString().trim()
             val email = emailField.text.toString().trim()
             val password = passwordField.text.toString().trim()
             val username = nameField.text.toString().trim()
-
             val privacyCheckbox = view.findViewById<CheckBox>(R.id.privacy_checkbox)
-
-
-
             if (name.isNotEmpty() && email.isNotEmpty() && password.isNotEmpty() && privacyCheckbox.isChecked) {
-
-
-                // 🔐 Create user
+                // Creates the user
                 auth.createUserWithEmailAndPassword(email, password)
                     .addOnCompleteListener { task ->
                         if (task.isSuccessful) {
                             val userId = auth.currentUser?.uid ?: ""
                             val database = FirebaseDatabase.getInstance()
                             val userRef = database.getReference("users").child(userId)
-
                             val userData = mapOf(
                                 "name" to name,
                                 "email" to email
                             )
 
-
+                            //Sets up the user in the database
                             FirebaseAuth.getInstance().createUserWithEmailAndPassword(email, password)
                                 .addOnCompleteListener { task ->
                                     if (task.isSuccessful) {
                                         val user = FirebaseAuth.getInstance().currentUser
                                         val profileUpdates = UserProfileChangeRequest.Builder()
-                                            .setDisplayName(username) // <-- Set the display name
+                                            //Sets the username
+                                            .setDisplayName(username)
                                             .build()
                                         user?.updateProfile(profileUpdates)?.addOnCompleteListener {
                                         }
                                     }
                                 }
 
-
                             userRef.setValue(userData)
                                 .addOnSuccessListener {
+                                    //Message that comes up when the user sucesfully signs up
                                     Toast.makeText(context, "Signup successful!", Toast.LENGTH_SHORT).show()
                                     findNavController().navigate(R.id.action_signupFragment_to_loginFragment)
                                 }
-                                .addOnFailureListener {
-                                    Toast.makeText(context, "Signup worked, but DB save failed: ${it.message}", Toast.LENGTH_LONG).show()
-                                }
+
                         } else {
+                            //If the user cant sign up properly this message comes up
                             Toast.makeText(context, "Signup failed: ${task.exception?.message}", Toast.LENGTH_LONG).show()
                         }
                     }
             } else if (!privacyCheckbox.isChecked) {
+                //If the user does not agree to the Privacy Policy
                 Toast.makeText(context, "Please agree to the Privacy Policy", Toast.LENGTH_SHORT).show()
 
             } else {
+                //If they do not fill in all of the fields
                 Toast.makeText(context, "Please fill in all fields", Toast.LENGTH_SHORT).show()
             }
 

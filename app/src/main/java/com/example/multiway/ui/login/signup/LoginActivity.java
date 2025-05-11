@@ -1,7 +1,5 @@
 // Joey Teahan - 20520316
 //LoginActivity - Used to make the log in page functional
-
-
 package com.example.multiway.ui.login.signup;
 
 import android.content.Intent;
@@ -24,7 +22,7 @@ import com.google.firebase.database.ValueEventListener;
 import java.util.Objects;
 
 public class LoginActivity extends AppCompatActivity {
-
+//Declares the variables that will be seen on the page
     EditText loginUsername, loginPassword;
     Button loginButton;
     TextView signupRedirectText;
@@ -62,7 +60,8 @@ public class LoginActivity extends AppCompatActivity {
 
 
     }
-    public Boolean validateUsername(){ //Displays when user does not snter a username
+    public Boolean validateUsername(){
+        //Displays when user does not enter a username
         String val = loginUsername.getText().toString();
         if (val.isEmpty()) {
             loginUsername.setError("Username cannot be empty");
@@ -74,7 +73,8 @@ public class LoginActivity extends AppCompatActivity {
 
     }
 
-    public Boolean validatePassword(){ // Makes it so the user cannot enter an empty password
+    public Boolean validatePassword(){
+        // Makes it so the user cannot enter an empty password
         String val = loginPassword.getText().toString();
         if (val.isEmpty()) {
             loginUsername.setError("Password cannot be empty");
@@ -86,7 +86,8 @@ public class LoginActivity extends AppCompatActivity {
 
     }
 
-    public void checkUser(){ // Functions to make sure that the users password and username are the same as the values they used to sign up
+    public void checkUser(){
+        // Functions to make sure that the users password and username are the same as the values they used to sign up
         String userUsername = loginUsername.getText().toString().trim();
         String userPassword = loginPassword.getText().toString().trim();
 

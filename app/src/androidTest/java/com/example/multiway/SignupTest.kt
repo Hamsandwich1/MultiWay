@@ -4,25 +4,15 @@ import android.app.Activity
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.action.ViewActions.click
 import androidx.test.espresso.assertion.ViewAssertions.matches
-import androidx.test.espresso.matcher.RootMatchers.withDecorView
 import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
 import androidx.test.espresso.matcher.ViewMatchers.withId
-import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.ext.junit.rules.ActivityScenarioRule
-import org.hamcrest.CoreMatchers.`is`
-import org.hamcrest.core.IsNot.not
 import org.junit.Rule
 import org.junit.Test
-import android.app.PendingIntent.getActivity
 import android.view.View
 import androidx.test.espresso.Espresso.closeSoftKeyboard
-import androidx.test.espresso.UiController
-import androidx.test.espresso.ViewAction
 import androidx.test.espresso.action.ViewActions.typeText
-import org.hamcrest.CoreMatchers.containsString
-import org.hamcrest.Matcher
 import org.junit.Before
-
 
 class SignupTest {
 
@@ -37,8 +27,6 @@ class SignupTest {
         }
     }
 
-
-
     @Test
     fun showPolicyText() {
         //To see if the button that shows the policy is working
@@ -47,8 +35,6 @@ class SignupTest {
         //Checks if the text is displayed
         onView(withId(R.id.privacypolicytext)).check(matches(isDisplayed()))
     }
-
-
 
     @Test
     fun invalidEmail() {

@@ -18,6 +18,7 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
 public class SignupActivity extends AppCompatActivity {
+    //Declaring the variables that will appear on the page
 
     EditText signupName, signupEmail, signupUsername, signupPassword;
     TextView loginRedirectText;
@@ -40,8 +41,8 @@ public class SignupActivity extends AppCompatActivity {
         signupButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-
-                database = FirebaseDatabase.getInstance(); //I will implement Firebase to haev a proper database later in the projects development
+                //Setting up the Firebase database
+                database = FirebaseDatabase.getInstance();
                 reference = database.getReference("users"); //Users is the name of my database on firebase
 
                 //Getters from the values

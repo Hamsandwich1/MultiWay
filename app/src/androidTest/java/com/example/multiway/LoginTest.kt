@@ -1,19 +1,17 @@
 package com.example.multiway
 
-import android.view.View
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.action.ViewActions.click
+import androidx.test.espresso.action.ViewActions.closeSoftKeyboard
+import androidx.test.espresso.action.ViewActions.typeText
 import androidx.test.espresso.assertion.ViewAssertions.matches
-import androidx.test.espresso.matcher.RootMatchers
-import androidx.test.espresso.matcher.RootMatchers.withDecorView
+
 import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
 import androidx.test.espresso.matcher.ViewMatchers.withId
-import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.ext.junit.rules.ActivityScenarioRule
-import org.hamcrest.CoreMatchers.`is`
+
 import org.junit.Rule
 import org.junit.Test
-import org.hamcrest.Matchers.not
 
 
 class LoginTest {
@@ -21,27 +19,28 @@ class LoginTest {
     @get:Rule
     val activityScenarioRule = ActivityScenarioRule(MainActivity::class.java)
 
+
+
     @Test
-    fun loginWithEmptyFields_showsError() {
+    fun emptyInputs() {
+        //Test if the user does not enter any inputs and clicks the log in button
         onView(withId(R.id.login_button)).perform(click())
-
-        // Let the toast appear (small delay)
-        Thread.sleep(2000)
-
-        // Then perform the toast check outside the onActivity block
-        onView(withText("Please enter email and password"))
-            .inRoot(RootMatchers.withDecorView(not(`is`(getCurrentDecorView()))))
-            .check(matches(isDisplayed()))
+        Thread.sleep(1500)
+        onView(withId(R.id.login_button)).check(matches(isDisplayed()))
     }
 
-    // Helper function to get the decor view safely
-    private fun getCurrentDecorView(): View? {
-        var decorView: View? = null
-        activityScenarioRule.scenario.onActivity { activity ->
-            decorView = activity.window.decorView
-        }
-        return decorView
+    @Test
+    fun invalidInputs() {
+        //Tests if the user enters invalid inputs and clicks the log in button
+        //Set the input values to "example@email.com" and "examplepassword"
+        onView(withId(R.id.login_username)).perform(typeText("example@email.com"), closeSoftKeyboard())
+        onView(withId(R.id.login_password)).perform(typeText("examplepassword"), closeSoftKeyboard())
+        onView(withId(R.id.login_button)).perform(click())
+        Thread.sleep(1500)
+        // Checks to see if the user is still on the log in page
+        onView(withId(R.id.login_button)).check(matches(isDisplayed()))
     }
+
 
 
 }

@@ -145,7 +145,7 @@ class GalleryFragment : Fragment() {
         }
 
         //Sets up the map
-        mapView.mapboxMap.loadStyle(Style.DARK) { style ->
+        mapView.mapboxMap.loadStyle(Style.MAPBOX_STREETS) { style ->
             //Loads the icons on the map
             loadIconsIntoStyle(style)
             searchAnnotationManager = mapView.annotations.createPointAnnotationManager()

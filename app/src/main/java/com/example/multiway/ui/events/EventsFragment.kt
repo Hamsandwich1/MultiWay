@@ -72,8 +72,8 @@ class EventsFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         //Loads up the style of the map
         binding.mapView.mapboxMap.loadStyle(
-            //I wanted the map to be dark mode as modern apps have a darker theme
-            style(Style.DARK) { } //
+            //Load the Mapbox style
+            style(Style.MAPBOX_STREETS) { } //
         ) {
             //Sets up the annotations for the map
             circleAnnotationManager = binding.mapView.annotations.createPolygonAnnotationManager()

@@ -1,3 +1,5 @@
+// Joey Teahan - 20520316
+//LoginFragment - Creates and sets up the log in section
 package com.example.multiway
 
 import android.content.Context
@@ -15,6 +17,7 @@ import com.google.firebase.database.FirebaseDatabase
 
 class LoginFragment : Fragment() {
 
+    //Declaring Firebase and the preferences
     private lateinit var auth: FirebaseAuth
     private lateinit var prefs: SharedPreferences
 
@@ -27,19 +30,21 @@ class LoginFragment : Fragment() {
         auth = FirebaseAuth.getInstance()
         prefs = requireContext().getSharedPreferences("loginPrefs", Context.MODE_PRIVATE)
 
+        //The variables that will appear on the page
         val emailEditText = view.findViewById<EditText>(R.id.login_username)
         val passwordEditText = view.findViewById<EditText>(R.id.login_password)
         val loginButton = view.findViewById<Button>(R.id.login_button)
         val signupRedirectText = view.findViewById<TextView>(R.id.signupRedirectText)
         val rememberCheckBox = view.findViewById<CheckBox>(R.id.remember_me_checkbox)
 
-        // 🔁 Auto-login if remembered and user is already authenticated
+        // User ticks if they do not want to enter their details every time
         if (prefs.getBoolean("rememberMe", false) && auth.currentUser != null) {
             findNavController().navigate(R.id.action_loginFragment_to_homeFragment)
         }
 
-        // 🔐 Login logic
+        //Setting up the logic for the log in
         loginButton.setOnClickListener {
+            //Setting the variables to the text fields
             val email = emailEditText.text.toString().trim()
             val password = passwordEditText.text.toString().trim()
 
@@ -70,7 +75,7 @@ class LoginFragment : Fragment() {
                 Toast.makeText(context, "Please enter email and password", Toast.LENGTH_SHORT).show()
             }
         }
-
+        //Text that when clicked will bring the user back to the signup page
         signupRedirectText.setOnClickListener {
             findNavController().navigate(R.id.action_loginFragment_to_signupFragment)
         }

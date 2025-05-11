@@ -1,15 +1,16 @@
+//Joey Teahan - 20520316
+//SuggestedFragment class - This page allows the user to select
+// multiple POIs that appear in a selected radius and draws a route connecting them.
 package com.example.multiway.ui.suggested
 
 import android.Manifest
 import android.app.AlertDialog
 import android.content.pm.PackageManager
 import android.graphics.BitmapFactory
-import android.graphics.Color
 import android.os.Bundle
 import android.os.Looper
 import android.util.Log
 import android.view.*
-import android.widget.AdapterView
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -18,70 +19,58 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.multiway.R
 import com.example.multiway.databinding.FragmentSuggestedroutesBinding
-import com.google.android.gms.common.api.Response
 import com.google.android.gms.location.*
 import com.mapbox.api.directions.v5.DirectionsCriteria
 import com.mapbox.api.directions.v5.MapboxDirections
 import com.mapbox.api.directions.v5.models.DirectionsResponse
 import com.mapbox.core.constants.Constants.PRECISION_6
-import com.mapbox.geojson.Feature
-import com.mapbox.geojson.FeatureCollection
 import com.mapbox.geojson.LineString
 import com.mapbox.geojson.Point
 import com.mapbox.maps.CameraOptions
 import com.mapbox.maps.Style
 import com.mapbox.maps.extension.style.layers.addLayer
-import com.mapbox.maps.extension.style.layers.generated.LineLayer
 import com.mapbox.maps.extension.style.layers.generated.lineLayer
 import com.mapbox.maps.extension.style.layers.properties.generated.LineJoin
 import com.mapbox.maps.extension.style.sources.addSource
-import com.mapbox.maps.extension.style.sources.generated.GeoJsonSource
 import com.mapbox.maps.extension.style.sources.generated.geoJsonSource
-import com.mapbox.maps.extension.style.sources.getSource
-import com.mapbox.maps.extension.style.sources.getSourceAs
-import com.mapbox.maps.plugin.LocationPuck2D
 import com.mapbox.maps.plugin.annotation.annotations
 import com.mapbox.maps.plugin.annotation.generated.PointAnnotationManager
 import com.mapbox.maps.plugin.annotation.generated.PointAnnotationOptions
-import com.mapbox.maps.plugin.annotation.generated.PolylineAnnotationOptions
 import com.mapbox.maps.plugin.annotation.generated.createPointAnnotationManager
-import com.mapbox.maps.plugin.annotation.generated.createPolylineAnnotationManager
 import com.mapbox.search.autocomplete.PlaceAutocomplete
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlin.math.*
 import com.mapbox.maps.plugin.locationcomponent.location
-import javax.security.auth.callback.Callback
 import retrofit2.Call
 
 
 
 
-
+//Beginning of class
 class SuggestedFragment : Fragment() {
 
+    //Creating all of my variables
     private var _binding: FragmentSuggestedroutesBinding? = null
     private val binding get() = _binding!!
-
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private lateinit var pointAnnotationManager: PointAnnotationManager
     private lateinit var adapter: SuggestedPlaceAdapter
     private lateinit var placeAutocomplete: PlaceAutocomplete
-
     private var userLocation: Point? = null
     private var selectedRadiusKm = 5.0
     private val suggestions = mutableListOf<SuggestedPlaceItem>()
     private var currentKeywords: List<String> = emptyList()
-
     private val routeTypeCategories = mapOf(
+        //Setting what POIs will appear under the chips +
         "Romantic Walk" to listOf("romantic cafe", "scenic viewpoint", "quiet park"),
         "Family Day Out" to listOf("children museum", "zoo", "family park"),
         "Solo Exploring" to listOf("museum", "park", "nature reserve", "hidden gem", "historical site"),
         "Pub Crawl" to listOf("traditional pub", "craft beer bar", "rooftop bar", "pub", "bar","cocktail bar", "wine bar", "beer bar" )
     )
-
     private val moodCategoryMap = mapOf(
+        //Setting what POIs appear under the moods
         "Chill Afternoon" to listOf("coffee shop", "scenic park", "bookstore"),
         "Party Night" to listOf("nightclub", "bar", "live music"),
         "Solo Exploring" to listOf("museum", "library", "landmark"),
@@ -98,32 +87,31 @@ class SuggestedFragment : Fragment() {
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireActivity())
         placeAutocomplete = PlaceAutocomplete.create()
 
-
-        binding.mapView.mapboxMap.loadStyle(Style.DARK) { style ->
+//Loads in the Mapbox map
+        binding.mapView.mapboxMap.loadStyle(Style.MAPBOX_STREETS) { style ->
             pointAnnotationManager = binding.mapView.annotations.createPointAnnotationManager()
-
+            //I wanted to have two different icons for the picked and not picked POIs
             style.addImage("poi_notpicked", BitmapFactory.decodeResource(resources, R.drawable.route))
             style.addImage("poi_picked", BitmapFactory.decodeResource(resources, R.drawable.routepicked))
-
+            //Setting up teh chip section
             val chipGroup = binding.routeChipGroup
             val toggleChipsButton = binding.toggleChipsButton
-
             toggleChipsButton.setOnClickListener {
                 chipGroup.visibility = if (chipGroup.visibility == View.VISIBLE) View.GONE else View.VISIBLE
             }
 
-
-
+            //Declaring the mapview
             binding.mapView.location.updateSettings {
                 enabled = true
                 pulsingEnabled = true
             }
 
+            //Connecting the SuggestedPlaceAdapter
             adapter = SuggestedPlaceAdapter(suggestions) { place ->
                 place.isSelected = !place.isSelected
                 adapter.notifyDataSetChanged()
 
-                // Update map icon
+                // Updates map icon
                 pointAnnotationManager.annotations.find { it.point == place.coordinate }?.let { annotation ->
                     annotation.iconImage = if (place.isSelected) "poi_picked" else "poi_notpicked"
                     pointAnnotationManager.update(annotation)
@@ -142,7 +130,7 @@ class SuggestedFragment : Fragment() {
                     it.isSelected = !it.isSelected
                     adapter.notifyDataSetChanged()
 
-                    // Change icon dynamically
+                    // Changes the icon
                     annotation.iconImage = if (it.isSelected) "poi_picked" else "poi_notpicked"
                     pointAnnotationManager.update(annotation)
 
@@ -151,13 +139,10 @@ class SuggestedFragment : Fragment() {
                 true
             }
 
-
             enableUserLocation()
         }
 
-
-
-
+        //Setting up up the mood section
         val moodOptions = resources.getStringArray(R.array.moods)
         binding.moodButton.setOnClickListener {
             AlertDialog.Builder(requireContext())
@@ -171,14 +156,13 @@ class SuggestedFragment : Fragment() {
                 }
                 .show()
         }
-
+        //Making the chips visable if the user selects the button
         binding.toggleChipsButton.setOnClickListener {
             val isVisible = binding.routeChipGroup.visibility == View.VISIBLE
             binding.routeChipGroup.visibility = if (isVisible) View.GONE else View.VISIBLE
         }
 
-
-
+        //Setting the values to the buttons
         binding.routeChipGroup.setOnCheckedStateChangeListener { _, checkedIds ->
             val selected = when (checkedIds.firstOrNull()) {
                 R.id.chipPubCrawl -> "Pub Crawl"
@@ -188,15 +172,13 @@ class SuggestedFragment : Fragment() {
                 else -> null
             }
             selected?.let {
-
+                //I wanted to have a message that warns users
                 if (it == "Pub Crawl") {
                     Toast.makeText(requireContext(), "Please drink and travel responsibly!", Toast.LENGTH_LONG).show()
                     binding.pubCrawlHeader.visibility = View.VISIBLE
                 } else {
                     binding.pubCrawlHeader.visibility = View.GONE
                 }
-
-
                 currentKeywords = routeTypeCategories[it] ?: emptyList()
                 suggestPlaces(currentKeywords)
             }
@@ -204,6 +186,7 @@ class SuggestedFragment : Fragment() {
         setupRadiusSelector()
     }
 
+    //Function that shows the necessary POIs to the user.
     private fun suggestPlaces(keywords: List<String>) {
         val location = userLocation ?: return
         suggestions.clear()
@@ -225,22 +208,21 @@ class SuggestedFragment : Fragment() {
                             val coord = result.coordinate ?: continue
                             val key = "${coord.latitude()},${coord.longitude()}"
                             val dist = calculateDistance(location, coord)
-
                             if (dist <= selectedRadiusKm && seen.add(key)) {
                                 found.add(SuggestedPlaceItem(result.name, coord, dist))
                             }
                         } catch (e: Exception) {
-                            // skip this result
                         }
                     }
                 }
             }
 
+            //The results are sorted by closest first.
             val sorted = found.sortedBy { it.distanceKm }
             suggestions.addAll(sorted)
             adapter.notifyDataSetChanged()
-
             sorted.forEach {
+                //Changing the icon when a POI is selected
                 pointAnnotationManager.create(
                     PointAnnotationOptions()
                         .withPoint(it.coordinate!!)
@@ -260,6 +242,7 @@ class SuggestedFragment : Fragment() {
     }
 
     private fun setupRadiusSelector() {
+        //The radius options
         val options = arrayOf("1 km", "2 km", "5 km", "10 km", "20 km", "Country Wide")
         binding.radiusButton.setOnClickListener {
             AlertDialog.Builder(requireContext())
@@ -271,6 +254,7 @@ class SuggestedFragment : Fragment() {
                         2 -> 5.0
                         3 -> 10.0
                         4 -> 20.0
+                        //Country wide
                         else -> -1.0
                     }
                     suggestPlaces(currentKeywords)
@@ -279,6 +263,7 @@ class SuggestedFragment : Fragment() {
         }
     }
 
+    //Asks permission to get the users location
     private fun enableUserLocation() {
         if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION)
             != PackageManager.PERMISSION_GRANTED) {
@@ -303,8 +288,7 @@ class SuggestedFragment : Fragment() {
         fusedLocationClient.requestLocationUpdates(request, callback, Looper.getMainLooper())
     }
 
-
-
+    //Had to use math functions to create the circle
     private fun calculateDistance(p1: Point, p2: Point): Double {
         val R = 6371.0
         val dLat = Math.toRadians(p2.latitude() - p1.latitude())
@@ -313,6 +297,7 @@ class SuggestedFragment : Fragment() {
         return R * 2 * atan2(sqrt(a), sqrt(1 - a))
     }
 
+    //Function that draws the route
     private fun drawRouteToSelectedPOIs() {
         val origin = userLocation ?: return
         val selected = suggestions.filter { it.isSelected }.mapNotNull { it.coordinate }
@@ -326,10 +311,8 @@ class SuggestedFragment : Fragment() {
             return
         }
 
-
         val destination = selected.last()
         val waypoints = selected.dropLast(1)
-
         val client = MapboxDirections.builder()
             .origin(origin)
             .destination(destination)
@@ -354,6 +337,7 @@ class SuggestedFragment : Fragment() {
                         geometry(lineString)
                     })
 
+                    //Setting the properties of the route line
                     addLayer(lineLayer("route-layer", "route-source") {
                         lineColor("#d900ff")
                         lineWidth(5.0)
@@ -362,13 +346,12 @@ class SuggestedFragment : Fragment() {
                 }
             }
 
+            //To hande the errors
             override fun onFailure(call: Call<DirectionsResponse>, t: Throwable) {
                 Log.e("RouteError", "Failed to draw selected route: ${t.message}")
             }
         })
     }
-
-
 
     override fun onDestroyView() {
         super.onDestroyView()

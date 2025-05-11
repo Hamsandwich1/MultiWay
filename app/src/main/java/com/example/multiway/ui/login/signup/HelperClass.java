@@ -4,6 +4,7 @@
 package com.example.multiway.ui.login.signup;
 
 public class HelperClass {
+    //Declares the four sign up variables
     String name, email, username, password; //Declares the four sign up variables
 
     public HelperClass(String name, String email, String username, String password) {

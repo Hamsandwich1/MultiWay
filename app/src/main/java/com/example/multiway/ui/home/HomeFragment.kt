@@ -53,19 +53,23 @@ class HomeFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         binding.gallerybtn.setOnClickListener {
-            findNavController().navigate(R.id.nav_gallery) // or your Explore fragment's ID
+            //The button that brings the user to the gallery page
+            findNavController().navigate(R.id.nav_gallery)
         }
 
         binding.eventsbtn.setOnClickListener {
-            findNavController().navigate(R.id.nav_events) // replace with correct fragment ID
+            //The button that brings the user to the events page
+            findNavController().navigate(R.id.nav_events)
         }
 
         binding.historybtn.setOnClickListener {
+            //The button that brings the user to the history page
             findNavController().navigate(R.id.nav_history)
         }
 
         binding.routesbtn.setOnClickListener {
-            findNavController().navigate(R.id.nav_suggested) // or "routes" fragment ID
+            //The button that brings the user to the suggested page
+            findNavController().navigate(R.id.nav_suggested)
 
         }
     }
